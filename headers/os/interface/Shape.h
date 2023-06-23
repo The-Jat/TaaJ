@@ -92,6 +92,7 @@ private:
 private:
 	friend class BShapeIterator;
 	friend class BView;
+	friend class KView;//khidki
 	friend class BFont;
 	friend class BPrivate::PicturePlayer;
 	friend class BPrivate::ServerLink;

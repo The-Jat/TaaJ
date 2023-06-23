@@ -11,6 +11,7 @@
 
 #include <new>
 
+#include <KLayout.h> //khidki
 #include <binary_compatibility/Interface.h>
 
 

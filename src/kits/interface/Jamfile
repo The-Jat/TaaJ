@@ -156,6 +156,99 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 			OneElementLayouter.cpp
 			SimpleLayouter.cpp
 
+Jaatbar.cpp
+
+KAlert.cpp
+KAbstractLayout.cpp
+KAbstractLayoutItem.cpp
+KAbstractSpinner.cpp
+KBitmap.cpp
+KBox.cpp
+KCheckBox.cpp
+KBMCPrivate.cpp
+KButton.cpp
+
+KCardLayout.cpp
+KCardView.cpp
+KChannelControl.cpp
+KChannelSlider.cpp
+KControl.cpp
+KControlLook.cpp
+
+KDecimalSpinner.cpp
+KDragger.cpp
+
+
+KGridLayout.cpp
+KGridLayoutBuilder.cpp
+KGridView.cpp
+KGroupLayout.cpp
+KGroupLayoutBuilder.cpp
+KGroupView.cpp
+
+KHaikuControlLook.cpp
+
+KIcon.cpp
+
+			Khidki.cpp
+			Laminate.cpp
+			KLayout.cpp
+			KLayoutItem.cpp
+			KLayoutUtils.cpp
+			KListItem.cpp
+			KListView.cpp
+			
+			KMenu.cpp
+			KMenuBar.cpp
+			KMenuField.cpp
+			KMenuItem.cpp
+			KMenuItemPrivate.cpp
+			KMenuPrivate.cpp
+			KMenuWindow.cpp
+
+KOptionControl.cpp
+KOptionPopUp.cpp
+KOutlineListView.cpp
+
+KPicture.cpp
+KPictureButton.cpp
+KPopUpMenu.cpp
+
+			KScrollBar.cpp
+			KScrollView.cpp
+			KSeparatorItem.cpp
+			KSeparatorView.cpp
+			KShelf.cpp
+			KSlider.cpp
+			KSpinner.cpp
+			KSpaceLayoutItem.cpp
+			KSplitLayout.cpp
+			KSplitView.cpp
+			KStringItem.cpp
+			KStringView.cpp
+
+
+KTabView.cpp
+KTextControl.cpp
+KTextInput.cpp
+KTextView.cpp
+KToolTip.cpp
+KToolTipManager.cpp
+KTwoDimensionalLayout.cpp
+
+			KViewLayoutItem.cpp
+			KViewPort.cpp
+			KWindowStack.cpp
+
+KZombieReplicantView.cpp
+
+KInlineInput.cpp
+KLineBuffer.cpp
+KStyleBuffer.cpp
+KTextGapBuffer.cpp
+KUndoBuffer.cpp
+KWidthBuffer.cpp
+
 			: <$(architecture)>libshared.a
 			;
 

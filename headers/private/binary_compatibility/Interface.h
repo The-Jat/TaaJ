@@ -9,6 +9,8 @@
 
 #include <binary_compatibility/Global.h>
 
+#include <KBitmap.h> //khidki
+#include <KToolTip.h> //khidki
 
 struct perform_data_min_size {
 	BSize	return_value;
@@ -56,5 +58,21 @@ struct perform_data_set_icon {
 	uint32			flags;
 };
 
+//khidki start
+struct k_perform_data_set_layout {
+	KLayout*	layout;
+};
+
+struct k_perform_data_get_tool_tip_at {
+	BPoint		point;
+	KToolTip**	tool_tip;
+	bool		return_value;
+};
+
+struct k_perform_data_set_icon {
+	const KBitmap*	icon;
+	uint32			flags;
+};
+//end
 
 #endif /* _BINARY_COMPATIBILITY_INTERFACE_H_ */

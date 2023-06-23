@@ -20,6 +20,7 @@
 #include <Region.h>
 #include <String.h>
 #include <Window.h>
+#include <Khidki.h>//khidki
 
 #include "DrawState.h"
 #include "MultiLocker.h"

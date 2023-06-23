@@ -1208,6 +1208,29 @@ DebugServer::DebugServer(status_t &error)
 status_t
 DebugServer::Init()
 {
+
+
+debug_printf("before launching the tst...\n");
+/*
+BPath path1;
+if(find_directory(B_SYSTEM_APPS_DIRECTORY, &path1) != B_OK || path1.Append("tst") != B_OK)
+{
+	path1.SetTo("/boot/system/apps/tst");
+}
+
+	BEntry entry1(path1.Path());
+	entry_ref ref1;
+	BString cmd1;
+	cmd1="gcc";
+	const char* argv1[]={cmd1.String()};
+	if(entry1.GetRef(&ref1) != B_OK || be_roster->Launch(&ref1,1,argv1) != B_OK)
+	{
+		debug_printf("unable to launch the tst...\n");
+	}
+*/
+debug_printf("after launching the tst...\n");
+
+
 	// create listener port
 	fListenerPort = create_port(10, "kernel listener");
 	if (fListenerPort < 0)

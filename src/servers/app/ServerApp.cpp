@@ -52,12 +52,14 @@
 #include "CursorSet.h"
 #include "Desktop.h"
 #include "DecorManager.h"
+#include "KDecorManager.h" //khidki
 #include "DrawingEngine.h"
 #include "EventStream.h"
 #include "GlobalFontManager.h"
 #include "HWInterface.h"
 #include "InputManager.h"
 #include "OffscreenServerWindow.h"
+#include "KOffscreenServerWindow.h"//khidki
 #include "Screen.h"
 #include "ServerBitmap.h"
 #include "ServerConfig.h"
@@ -65,9 +67,10 @@
 #include "ServerPicture.h"
 #include "ServerTokenSpace.h"
 #include "ServerWindow.h"
+#include "KServerWindow.h"//khidki
 #include "SystemPalette.h"
 #include "Window.h"
-
+#include "KWindow.h"//khidki
 
 //#define DEBUG_SERVERAPP
 #ifdef DEBUG_SERVERAPP
@@ -82,6 +85,18 @@
 #else
 #	define FTRACE(x) ;
 #endif
+
+//khidki code
+//start
+//#define TRACE_DEBUG_SERVER
+#ifdef TRACE_DEBUG_SERVER
+#	define TTRACE(x) debug_printf x
+#else
+#	define TTRACE(x) ;
+#endif
+//end
+
+#define DEBUG_SERVER_APP //khidki for debugging
 
 using std::nothrow;
 
@@ -332,6 +347,31 @@ ServerApp::RemoveWindow(ServerWindow* window)
 }
 
 
+//khidki start
+
+bool
+ServerApp::K_AddWindow(KServerWindow* window)
+{
+debug_printf("[ServerApp]{K_AddWindow}\n");
+
+	BAutolock locker(k_fWindowListLock);
+
+	return k_fWindowList.AddItem(window);
+}
+
+
+void
+ServerApp::K_RemoveWindow(KServerWindow* window)
+{
+debug_printf("[ServerApp]{K_RemoveWindow}\n");
+
+	BAutolock locker(k_fWindowListLock);
+
+	k_fWindowList.RemoveItem(window);
+}
+//end
+
+
 bool
 ServerApp::InWorkspace(int32 index) const
 {
@@ -360,6 +400,40 @@ ServerApp::InWorkspace(int32 index) const
 }
 
 
+//khidki start
+bool
+ServerApp::K_InWorkspace(int32 index) const
+{
+//#ifdef DEBUG_SERVER_APP
+debug_printf("[ServerApp]{K_InWorkspace}\n");
+//#endif
+	BAutolock locker(k_fWindowListLock);
+
+	// we could cache this, but then we'd have to recompute the cached
+	// value everytime a window has closed or changed workspaces
+
+	// TODO: support initial application workspace!
+
+	for (int32 i = k_fWindowList.CountItems(); i-- > 0;) {
+		KServerWindow* serverWindow = k_fWindowList.ItemAt(i);
+
+		const K_Window* window = serverWindow->Window();
+		if (window == NULL || window->IsOffscreenWindow())
+			continue;
+
+		// only normal and unhidden windows count
+
+		if (window->IsNormal() && !window->IsHidden()
+			&& window->InWorkspace(index))
+			return true;
+	}
+
+	return false;
+}
+
+//end
+
+
 uint32
 ServerApp::Workspaces() const
 {
@@ -382,6 +456,25 @@ ServerApp::Workspaces() const
 		if (window->IsNormal() && !window->IsHidden())
 			workspaces |= window->Workspaces();
 	}
+
+//khidki start
+	BAutolock locker1(k_fWindowListLock);
+
+for (int32 i = k_fWindowList.CountItems(); i-- > 0;) {
+		KServerWindow* serverWindow1 = k_fWindowList.ItemAt(i);
+
+		const K_Window* window1 = serverWindow1->Window();
+		if (window1 == NULL || window1->IsOffscreenWindow())
+			continue;
+
+		// only normal and unhidden windows count
+
+		if (window1->IsNormal() && !window1->IsHidden())
+			workspaces |= window1->Workspaces();
+	}
+
+//end
+
 
 	// TODO: add initial application workspace!
 	return workspaces;
@@ -602,6 +695,29 @@ ServerApp::_DispatchMessage(int32 code, BPrivate::LinkReceiver& link)
 			}
 			break;
 		}
+		
+		//khidki msg handle
+		case AS_KHIDKI_KHOL:
+		case AS_CREATE_OFFSCREEN_WINDOW_2:
+		{
+		
+		debug_printf("[ServerApp]{_DispatchMessage} AS_KHIDKI_KHOL msg is received by the app_server...\n");
+		IsKWindow = true;//to let know that the client is KWindow...
+debug_printf("[ServerApp]{_DispatchMessage} IsKWindow=%d\n",IsKWindow);
+
+			port_id clientReplyPort = -1;
+			status_t status = _CreateKWindow(code, link, clientReplyPort);
+
+			// if sucessful, ServerWindow::Run() will already have replied
+			if (status < B_OK) {
+				// window creation failed, we need to notify the client
+				BPrivate::LinkSender reply(clientReplyPort);
+				reply.StartMessage(status);
+				reply.Flush();
+			}
+			debug_printf("[ServerApp]{_DispatchMessage} AS_KHIDKI_KHOL msg done...\n");
+			break;
+		}
 
 		case AS_GET_WINDOW_LIST:
 		{
@@ -634,6 +750,42 @@ ServerApp::_DispatchMessage(int32 code, BPrivate::LinkReceiver& link)
 				fDesktop->WriteApplicationOrder(workspace, fLink.Sender());
 			break;
 		}
+		
+		case AS_GET_WINDOW_LIST_2:
+		{
+		debug_printf("[ServerApp]{_DispatchMessage} AS_GET_WINDOW_LIST_2\n");
+			team_id team;
+			if (link.Read<team_id>(&team) == B_OK)
+				fDesktop->K_WriteWindowList(team, fLink.Sender());
+			break;
+		}
+
+		case AS_GET_WINDOW_INFO_2:
+		{
+		debug_printf("[ServerApp]{_DispatchMessage} AS_GET_WINDOW_INFO_2\n");
+			int32 serverToken;
+			if (link.Read<int32>(&serverToken) == B_OK)
+				fDesktop->K_WriteWindowInfo(serverToken, fLink.Sender());
+			break;
+		}
+
+		case AS_GET_WINDOW_ORDER_2:
+		{
+		debug_printf("[ServerApp]{_DispatchMessage} AS_GET_WINDOW_ORDER_2\n");
+			int32 workspace;
+			if (link.Read<int32>(&workspace) == B_OK)
+				fDesktop->K_WriteWindowOrder(workspace, fLink.Sender());
+			break;
+		}
+
+		case AS_GET_APPLICATION_ORDER_2:
+		{
+		debug_printf("[ServerApp]{_DispatchMessage} AS_GET_APPLICATION_ORDER_2\n");
+			int32 workspace;
+			if (link.Read<int32>(&workspace) == B_OK)
+				fDesktop->K_WriteApplicationOrder(workspace, fLink.Sender());
+			break;
+		}
 
 		case AS_MINIMIZE_TEAM:
 		{
@@ -642,12 +794,30 @@ ServerApp::_DispatchMessage(int32 code, BPrivate::LinkReceiver& link)
 				fDesktop->MinimizeApplication(team);
 			break;
 		}
+		
+		case AS_MINIMIZE_TEAM_2:
+		{
+		debug_printf("[ServerApp] {_DispatchMessage} AS_MINIMIZE_TEAM_2\n");
+			team_id team;
+			if (link.Read<team_id>(&team) == B_OK)
+				fDesktop->K_MinimizeApplication(team);
+			break;
+		}
 
 		case AS_BRING_TEAM_TO_FRONT:
 		{
 			team_id team;
 			if (link.Read<team_id>(&team) == B_OK)
 				fDesktop->BringApplicationToFront(team);
+			break;
+		}
+		
+		case AS_BRING_TEAM_TO_FRONT_2:
+		{
+		debug_printf("[ServerApp]{_DispatchMessage} AS_BRING_TEAM_TO_FRONT_2\n");
+			team_id team;
+			if (link.Read<team_id>(&team) == B_OK)
+				fDesktop->K_BringApplicationToFront(team);
 			break;
 		}
 
@@ -661,6 +831,21 @@ ServerApp::_DispatchMessage(int32 code, BPrivate::LinkReceiver& link)
 				break;
 
 			fDesktop->WindowAction(token, action);
+			break;
+		}
+		
+		case AS_WINDOW_ACTION_2:
+		{
+		debug_printf("[ServerApp]{_DispatchMessage} AS_WINDOW_ACTION_2\n");
+		
+			int32 token;
+			int32 action;
+
+			link.Read<int32>(&token);
+			if (link.Read<int32>(&action) != B_OK)
+				break;
+
+			fDesktop->K_WindowAction(token, action);
 			break;
 		}
 
@@ -692,6 +877,41 @@ ServerApp::_DispatchMessage(int32 code, BPrivate::LinkReceiver& link)
 			break;
 		}
 
+//khidki start
+	case AS_SET_DECORATOR_2:
+		{
+		#ifdef DEBUG_SERVER_APP
+			debug_printf("[ServerApp]{_DispatchMessage}AS_SET_DECORATOR_2\n");
+		#endif
+			// Attached Data:
+			// path to decorator add-on
+
+			BString path;
+			link.ReadString(path);
+
+			status_t error = k_gDecorManager.SetDecorator(path, fDesktop);
+
+			fLink.Attach<status_t>(error);
+			fLink.Flush();
+
+			if (error == B_OK)
+				fDesktop->BroadcastToAllApps(AS_UPDATE_DECORATOR_2);
+			break;
+		}
+
+		case AS_GET_DECORATOR_2:
+		{
+		#ifdef DEBUG_SERVER_APP
+			debug_printf("[ServerApp]{_DispatchMessage}AS_GET_DECORATOR_2\n");
+		#endif
+			fLink.StartMessage(B_OK);
+			fLink.AttachString(k_gDecorManager.GetCurrentDecorator().String());
+			fLink.Flush();
+			break;
+		}
+
+//end
+
 		case AS_SET_CONTROL_LOOK:
 		{
 			STRACE(("ServerApp %s: Set ControlLook\n", Signature()));
@@ -704,6 +924,24 @@ ServerApp::_DispatchMessage(int32 code, BPrivate::LinkReceiver& link)
 			}
 
 			fLink.StartMessage(error);
+			fLink.Flush();
+			break;
+		}
+		
+		case AS_GET_CONTROL_LOOK_2:
+		{
+		debug_printf("[ServerApp]{_DispatchMessage} AS_GET_CONTROL_LOOK_2\n");
+			STRACE(("ServerApp %s: Get ControlLook\n", Signature()));
+
+			if (fDesktop->LockSingleWindow()) {
+				DesktopSettings settings(fDesktop);
+
+				fLink.StartMessage(B_OK);
+				fLink.AttachString(settings.ControlLook().String());
+				fDesktop->UnlockSingleWindow();
+			} else
+				fLink.StartMessage(B_ERROR);
+
 			fLink.Flush();
 			break;
 		}
@@ -3000,6 +3238,56 @@ ServerApp::_DispatchMessage(int32 code, BPrivate::LinkReceiver& link)
 			break;
 		}
 
+//khidki start
+		case AS_GET_SCREEN_ID_FROM_WINDOW_2:
+		{
+		#ifdef DEBUG_SERVER_APP
+			debug_printf("[ServerApp]{_DispatchMessage}AS_GET_SCREEN_ID_FROM_WINDOW_2\n");
+		#endif
+			status_t status = B_BAD_VALUE;
+
+			// Attached data
+			// 1) int32 - window client token
+
+			int32 clientToken;
+			if (link.Read<int32>(&clientToken) != B_OK)
+				status = B_BAD_DATA;
+			else {
+				BAutolock locker(fWindowListLock);
+
+				for (int32 i = k_fWindowList.CountItems(); i-- > 0;) {
+					KServerWindow* serverWindow = k_fWindowList.ItemAt(i);
+
+					if (serverWindow->ClientToken() == clientToken) {
+						AutoReadLocker _(fDesktop->ScreenLocker());
+
+						// found it!
+						K_Window* window = serverWindow->Window();
+						const Screen* screen = NULL;
+						if (window != NULL)
+							screen = window->Screen();
+
+						if (screen == NULL) {
+							// The window hasn't been added to the desktop yet,
+							// or it's an offscreen window
+							break;
+						}
+
+						fLink.StartMessage(B_OK);
+						fLink.Attach<int32>(screen->ID());
+						status = B_OK;
+						break;
+					}
+				}
+			}
+
+			if (status != B_OK)
+				fLink.StartMessage(status);
+			fLink.Flush();
+			break;
+		}
+//end
+
 		case AS_SCREEN_GET_MODE:
 		{
 			STRACE(("ServerApp %s: AS_SCREEN_GET_MODE\n", Signature()));
@@ -3758,6 +4046,115 @@ ServerApp::_CreateWindow(int32 code, BPrivate::LinkReceiver& link,
 }
 
 
+//khidki code
+status_t
+ServerApp::_CreateKWindow(int32 code, BPrivate::LinkReceiver& link,
+	port_id& clientReplyPort)
+{
+
+debug_printf("[ServerApp]{_CreateKWindow} Into the _CreateKWindow...\n");
+
+	// Attached data:
+	// 1) int32 bitmap token (only for AS_CREATE_OFFSCREEN_WINDOW_2)
+	// 2) BRect window frame
+	// 3) uint32 window look
+	// 4) uint32 window feel
+	// 5) uint32 window flags
+	// 6) uint32 workspace index
+	// 7) int32 BHandler token of the window
+	// 8) port_id window's reply port
+	// 9) port_id window's looper port
+	// 10) const char * title
+
+	BRect frame;
+	int32 bitmapToken;
+	uint32 look;
+	uint32 feel;
+	uint32 flags;
+	uint32 workspaces;
+	int32 token;
+	port_id looperPort;
+	char* title;
+
+	if (code == AS_CREATE_OFFSCREEN_WINDOW_2)
+		link.Read<int32>(&bitmapToken);
+
+	link.Read<BRect>(&frame);
+	link.Read<uint32>(&look);
+	link.Read<uint32>(&feel);
+	link.Read<uint32>(&flags);
+	link.Read<uint32>(&workspaces);
+	link.Read<int32>(&token);
+	link.Read<port_id>(&clientReplyPort);
+	link.Read<port_id>(&looperPort);
+
+debug_printf("[ServerApp]{_CreateKWindow} frame.left=%f \n",frame.left);
+debug_printf("[ServerApp]{_CreateKWindow} frame.top=%f \n",frame.top);
+debug_printf("[ServerApp]{_CreateKWindow} frame.right=%f \n",frame.right);
+debug_printf("[ServerApp]{_CreateKWindow} frame.bottom=%f \n",frame.bottom);
+debug_printf("[ServerApp]{_CreateKWindow} flags =%d\n", flags);
+debug_printf("[ServerApp]{_CreateKWindow} window_look =%d\n", (int)look);
+debug_printf("[ServerApp]{_CreateKWindow} window_feel =%d\n", (int)feel);
+debug_printf("[ServerApp]{_CreateKWindow} workspaces =%d\n", workspaces);
+debug_printf("[ServerApp]{_CreateKWindow} token =%d\n", token);
+debug_printf("[ServerApp]{_CreateKWindow} clientReplyPort =%d\n",clientReplyPort);
+debug_printf("[ServerApp]{_CreateKWindow} looperPort =%d\n", looperPort);
+
+	if (link.ReadString(&title) != B_OK)
+		return B_ERROR;
+
+	if (!frame.IsValid()) {
+		// make sure we pass a valid rectangle to ServerWindow
+		frame.right = frame.left + 1;
+		frame.bottom = frame.top + 1;
+	}
+
+	status_t status = B_NO_MEMORY;
+	KServerWindow *window = NULL;
+
+	if (code == AS_CREATE_OFFSCREEN_WINDOW_2) {
+		ServerBitmap* bitmap = GetBitmap(bitmapToken);
+
+		if (bitmap != NULL) {
+			window = new (nothrow) K_OffscreenServerWindow(title, this,
+				clientReplyPort, looperPort, token, bitmap);
+		} else
+			status = B_ERROR;
+	} else {
+		debug_printf("[ServerApp]{_CreateKWindow} code other than AS_CREATE_OFFSCREEN_WINDOW_2...\n");
+		window = new (nothrow) KServerWindow(title, this, clientReplyPort,
+			looperPort, token);
+		STRACE(("\nServerApp %s: New Window %s (%g:%g, %g:%g)\n",
+			Signature(), title, frame.left, frame.top,
+			frame.right, frame.bottom));
+	}
+
+	free(title);
+
+	// NOTE: the reply to the client is handled in ServerWindow::Run()
+	if (window != NULL) {
+		debug_printf("[ServerApp]{_CreateKWindow} window != NULL...\n");
+		status = window->Init(frame, (window_look)look, (window_feel)feel,
+			flags, workspaces);
+		if (status == B_OK) {
+			debug_printf("[ServerApp] {_CreateKWindow} before Run()\n");
+			status = window->Run();
+			debug_printf("[ServerApp] {_CreateKWindow} after Run()\n");
+			if (status != B_OK) {
+				syslog(LOG_ERR, "ServerApp::_CreateWindow() - failed to run "
+					"the window thread\n");
+			}
+		}
+
+		if (status != B_OK)
+			delete window;
+	}
+
+	return status;
+}
+//end
+
+
 bool
 ServerApp::_HasWindowUnderMouse()
 {
@@ -3772,6 +4169,26 @@ ServerApp::_HasWindowUnderMouse()
 
 	return false;
 }
+
+
+//khidki start
+bool
+ServerApp::K__HasWindowUnderMouse()
+{
+debug_printf("[ServerApp]{K__HasWindowUnderMouse}\n");
+
+	BAutolock locker(fWindowListLock);
+
+	for (int32 i = k_fWindowList.CountItems(); i-- > 0;) {
+		KServerWindow* serverWindow = k_fWindowList.ItemAt(i);
+
+		if (fDesktop->K_ViewUnderMouse(serverWindow->Window()) != B_NULL_TOKEN)
+			return true;
+	}
+
+	return false;
+}
+//end
 
 
 bool

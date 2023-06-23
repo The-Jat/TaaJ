@@ -30,6 +30,15 @@ BScreen::BScreen(BWindow* window)
 }
 
 
+//khidki start
+BScreen::BScreen(KWindow* window)
+{
+	fScreen = BPrivateScreen::K_Get(window);
+}
+
+//end
+
+
 BScreen::~BScreen()
 {
 	BPrivateScreen::Put(fScreen);

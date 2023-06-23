@@ -108,9 +108,11 @@ protected:
 private:
 	typedef BHandler _inherited;
 	friend class BWindow;
+	/* the custom khidki */	friend class KWindow;
 	friend class BApplication;
 	friend class BMessenger;
 	friend class BView;
+	/* custom khidki*/		friend class KView;
 	friend class BHandler;
 	friend class ::BPrivate::BLooperList;
 	friend port_id _get_looper_port_(const BLooper* );

@@ -200,6 +200,7 @@ public:
 
 			void			SetRendererOffset(int32 offsetX, int32 offsetY);
 
+Painter * get_Painter(){return fPainter.Get();}//mak
 private:
 	friend class DrawTransaction;
 

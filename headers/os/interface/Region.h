@@ -29,6 +29,17 @@ public:
 								BRegion();
 								BRegion(const BRegion& other);
 								BRegion(const BRect rect);
+//khidki start
+void Merge(BRegion &first, BRegion &second);
+
+int32 FCount(){return fCount;}
+int32 FDataSize(){return fDataSize;}
+clipping_rect get_Bounds(){return fBounds;}
+
+clipping_rect* get_Data(){return fData;}
+
+clipping_rect* get_DataArray(int i);//{return fData[i];}
+//end
 	virtual						~BRegion();
 
 			BRegion&			operator=(const BRegion& other);

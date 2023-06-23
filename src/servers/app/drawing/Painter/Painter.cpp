@@ -263,9 +263,31 @@ Painter::AttachToBuffer(RenderingBuffer* buffer)
 		// These are the AGG renderes and rasterizes which
 		// will be used for stroking paths
 
+fRenderingBuffer = buffer;//mak
+
 		_SetRendererColor(fPatternHandler.HighColor());
 	}
 }
+
+
+//mak
+void* Painter::fb_addr()
+{
+	return addr=fRenderingBuffer->Bits();
+}
+
+
+int Painter::get_width()
+{
+	return fRenderingBuffer->Width();
+}
+
+
+int Painter::get_height()
+{
+	return fRenderingBuffer->Height();
+}
+//mak till here
 
 
 // DetachFromBuffer

@@ -25,8 +25,10 @@
 #include <Bitmap.h>
 #include <Clipboard.h>
 #include <ControlLook.h>
+#include <KControlLook.h>//khidki
 #include <Font.h>
 #include <Menu.h>
+#include <KMenu.h>//khidki
 #include <Point.h>
 #include <Roster.h>
 #include <Screen.h>
@@ -42,10 +44,12 @@
 #include <DefaultColors.h>
 #include <DesktopLink.h>
 #include <HaikuControlLook.h>
+#include <KHaikuControlLook.h>//khidki
 #include <InputServerTypes.h>
 #include <input_globals.h>
 #include <InterfacePrivate.h>
 #include <MenuPrivate.h>
+#include <KMenuPrivate.h>	//khidki
 #include <pr_server.h>
 #include <ServerProtocol.h>
 #include <ServerReadOnlyMemory.h>
@@ -56,6 +60,16 @@
 
 
 using namespace BPrivate;
+
+//khidki code
+//start
+//#define TRACE_DEBUG_SERVER
+#ifdef TRACE_DEBUG_SERVER
+#	define TTRACE(x) debug_printf x
+#else
+#	define TTRACE(x) ;
+#endif
+//end
 
 // some other weird struct exported by BeOS, it's not initialized, though
 struct general_ui_info {
@@ -69,6 +83,7 @@ struct general_ui_info {
 struct general_ui_info general_info;
 
 menu_info *_menu_info_ptr_;
+k_menu_info *k__menu_info_ptr_;//khidki
 
 extern "C" const char B_NOTIFICATION_SENDER[] = "be:sender";
 
@@ -208,6 +223,7 @@ static const char* kColorNames[kColorWhichCount] = {
 };
 
 static image_id sControlLookAddon = -1;
+static image_id k_sControlLookAddon = -1;//khidki
 
 
 namespace BPrivate {
@@ -1467,6 +1483,31 @@ _init_interface_kit_()
 	if (be_control_look == NULL)
 		be_control_look = new HaikuControlLook();
 
+//khidki start
+BString path1;
+	if (k_get_control_look(path1) && path1.Length() > 0) {
+	debug_printf("[_init_interface_kit_] k_get_control_look(path1) && path1.Length() > 0\n");
+		KControlLook* (*instantiate1)(image_id);
+
+		k_sControlLookAddon = load_add_on(path.String());
+		if (k_sControlLookAddon >= 0
+			&& get_image_symbol(k_sControlLookAddon,
+				"instantiate_control_look",
+				B_SYMBOL_TYPE_TEXT, (void **)&instantiate1) == B_OK) {
+			k_be_control_look = instantiate1(k_sControlLookAddon);
+			if (k_be_control_look == NULL) {
+			debug_printf("[_init_interface_kit_] k_be_control_look == null\n");
+				unload_add_on(k_sControlLookAddon);
+				k_sControlLookAddon = -1;
+			}
+		}
+	}
+	if (k_be_control_look == NULL)
+	{debug_printf("{_init_interface_kit_} k_be_control_look == NULL\n");
+		k_be_control_look = new KHaikuControlLook();
+	}
+//end
+
 	_init_global_fonts_();
 
 	BPrivate::gWidthBuffer = new BPrivate::WidthBuffer;
@@ -1480,6 +1521,15 @@ _init_interface_kit_()
 	if (status != B_OK)
 		return status;
 
+
+//khidki start
+	status = get_menu_info(&KMenu::sMenuInfo);
+	if (status != B_OK)
+	{debug_printf("{_init_interface_kit_} status != B_OK3\n");
+		return status;
+	}
+//end
+
 	general_info.background_color = ui_color(B_PANEL_BACKGROUND_COLOR);
 	general_info.mark_color = ui_color(B_CONTROL_MARK_COLOR);
 	general_info.highlight_color = ui_color(B_CONTROL_HIGHLIGHT_COLOR);
@@ -1487,6 +1537,8 @@ _init_interface_kit_()
 	general_info.color_frame = true;
 
 	// TODO: fill the other static members
+
+debug_printf("_init_interface_kit_  end\n");
 
 	return status;
 }
@@ -1503,6 +1555,11 @@ _fini_interface_kit_()
 	delete be_control_look;
 	be_control_look = NULL;
 
+//khidki start
+delete k_be_control_look;
+k_be_control_look = NULL;
+//end
+
 	// Note: if we ever want to support live switching, we cannot just unload
 	// the old one since some thread might still be in a method of the object.
 	// maybe locking/unlocking all loopers around would ensure proper exit.
@@ -1510,6 +1567,11 @@ _fini_interface_kit_()
 		unload_add_on(sControlLookAddon);
 	sControlLookAddon = -1;
 
+//khidki start
+	if (k_sControlLookAddon >= 0)
+		unload_add_on(k_sControlLookAddon);
+	k_sControlLookAddon = -1;
+//end
 	// TODO: Anything else?
 
 	return B_OK;
@@ -1538,6 +1600,26 @@ get_decorator(BString& path)
 }
 
 
+//khidki start
+/*!	\brief queries the server for the current decorator
+	\param path BString into which to store current decorator's location
+	\return boolean true/false
+*/
+bool
+k_get_decorator(BString& path)
+{
+	BPrivate::AppServerLink link;
+	link.StartMessage(AS_GET_DECORATOR_2);
+
+	int32 code;
+	if (link.FlushWithReply(code) != B_OK || code != B_OK)
+		return false;
+
+	return link.ReadString(path) == B_OK;
+}
+//end
+
+
 /*!	\brief Private function which sets the window decorator for the system.
 	\param path BString with the path to the decorator to set
 
@@ -1558,6 +1640,30 @@ set_decorator(const BString& path)
 
 	return error;
 }
+
+
+//khidki start
+/*!	\brief Private function which sets the window decorator for the system.
+	\param path BString with the path to the decorator to set
+
+	Will return detailed error status via status_t
+*/
+status_t
+k_set_decorator(const BString& path)
+{
+	BPrivate::AppServerLink link;
+
+	link.StartMessage(AS_SET_DECORATOR_2);
+
+	link.AttachString(path.String());
+	link.Flush();
+
+	status_t error = B_OK;
+	link.Read<status_t>(&error);
+
+	return error;
+}
+//end
 
 
 /*! \brief sets a window to preview a given decorator
@@ -1595,6 +1701,26 @@ get_control_look(BString& path)
 
 	return link.ReadString(path) == B_OK;
 }
+
+
+//khidki start
+/*!	\brief queries the server for the current ControlLook path
+	\param path BString into which to store current ControlLook's add-on path
+	\return boolean true/false
+*/
+bool
+k_get_control_look(BString& path)
+{
+	BPrivate::AppServerLink link;
+	link.StartMessage(AS_GET_CONTROL_LOOK_2);
+
+	int32 code;
+	if (link.FlushWithReply(code) != B_OK || code != B_OK)
+		return false;
+
+	return link.ReadString(path) == B_OK;
+}
+//end
 
 
 /*!	\brief Private function which sets the ControlLook for the system.
@@ -1648,6 +1774,37 @@ get_application_order(int32 workspace, team_id** _applications,
 }
 
 
+//khidki start
+status_t
+k_get_application_order(int32 workspace, team_id** _applications,
+	int32* _count)
+{
+	BPrivate::AppServerLink link;
+
+	link.StartMessage(AS_GET_APPLICATION_ORDER_2);
+	link.Attach<int32>(workspace);
+
+	int32 code;
+	status_t status = link.FlushWithReply(code);
+	if (status != B_OK)
+		return status;
+	if (code != B_OK)
+		return code;
+
+	int32 count;
+	link.Read<int32>(&count);
+
+	*_applications = (team_id*)malloc(count * sizeof(team_id));
+	if (*_applications == NULL)
+		return B_NO_MEMORY;
+
+	link.Read(*_applications, count * sizeof(team_id));
+	*_count = count;
+	return B_OK;
+}
+//end
+
+
 status_t
 get_window_order(int32 workspace, int32** _tokens, int32* _count)
 {
@@ -1676,6 +1833,36 @@ get_window_order(int32 workspace, int32** _tokens, int32* _count)
 }
 
 
+//khidki start
+status_t
+k_get_window_order(int32 workspace, int32** _tokens, int32* _count)
+{
+	BPrivate::AppServerLink link;
+
+	link.StartMessage(AS_GET_WINDOW_ORDER_2);
+	link.Attach<int32>(workspace);
+
+	int32 code;
+	status_t status = link.FlushWithReply(code);
+	if (status != B_OK)
+		return status;
+	if (code != B_OK)
+		return code;
+
+	int32 count;
+	link.Read<int32>(&count);
+
+	*_tokens = (int32*)malloc(count * sizeof(int32));
+	if (*_tokens == NULL)
+		return B_NO_MEMORY;
+
+	link.Read(*_tokens, count * sizeof(int32));
+	*_count = count;
+	return B_OK;
+}
+//end
+
+
 }	// namespace BPrivate
 
 // These methods were marked with "Danger, will Robinson!" in
@@ -1696,6 +1883,22 @@ do_window_action(int32 windowToken, int32 action, BRect zoomRect, bool zoom)
 
 	link.Flush();
 }
+
+
+//khidki start
+void
+k_do_window_action(int32 windowToken, int32 action, BRect zoomRect, bool zoom)
+{
+	BPrivate::AppServerLink link;
+
+	link.StartMessage(AS_WINDOW_ACTION_2);
+	link.Attach<int32>(windowToken);
+	link.Attach<int32>(action);
+		// we don't have any zooming effect
+
+	link.Flush();
+}
+//end
 
 
 client_window_info*
@@ -1720,6 +1923,32 @@ get_window_info(int32 serverToken)
 	link.Read(info, size);
 	return info;
 }
+
+
+//khidki start
+client_window_info*
+k_get_window_info(int32 serverToken)
+{
+	BPrivate::AppServerLink link;
+
+	link.StartMessage(AS_GET_WINDOW_INFO_2);
+	link.Attach<int32>(serverToken);
+
+	int32 code;
+	if (link.FlushWithReply(code) != B_OK || code != B_OK)
+		return NULL;
+
+	int32 size;
+	link.Read<int32>(&size);
+
+	client_window_info* info = (client_window_info*)malloc(size);
+	if (info == NULL)
+		return NULL;
+
+	link.Read(info, size);
+	return info;
+}
+//end
 
 
 int32*
@@ -1747,6 +1976,33 @@ get_token_list(team_id team, int32* _count)
 }
 
 
+//khidki start
+int32*
+k_get_token_list(team_id team, int32* _count)
+{
+	BPrivate::AppServerLink link;
+
+	link.StartMessage(AS_GET_WINDOW_LIST_2);
+	link.Attach<team_id>(team);
+
+	int32 code;
+	if (link.FlushWithReply(code) != B_OK || code != B_OK)
+		return NULL;
+
+	int32 count;
+	link.Read<int32>(&count);
+
+	int32* tokens = (int32*)malloc(count * sizeof(int32));
+	if (tokens == NULL)
+		return NULL;
+
+	link.Read(tokens, count * sizeof(int32));
+	*_count = count;
+	return tokens;
+}
+//end
+
+
 void
 do_bring_to_front_team(BRect zoomRect, team_id team, bool zoom)
 {
@@ -1771,6 +2027,35 @@ do_minimize_team(BRect zoomRect, team_id team, bool zoom)
 
 	link.Flush();
 }
+
+
+//khidki start
+void
+k_do_bring_to_front_team(BRect zoomRect, team_id team, bool zoom)
+{
+	BPrivate::AppServerLink link;
+
+	link.StartMessage(AS_BRING_TEAM_TO_FRONT_2);
+	link.Attach<team_id>(team);
+		// we don't have any zooming effect
+
+	link.Flush();
+}
+
+
+void
+k_do_minimize_team(BRect zoomRect, team_id team, bool zoom)
+{
+	BPrivate::AppServerLink link;
+
+	link.StartMessage(AS_MINIMIZE_TEAM_2);
+	link.Attach<team_id>(team);
+		// we don't have any zooming effect
+
+	link.Flush();
+}
+
+//end
 
 
 //	#pragma mark - truncate string

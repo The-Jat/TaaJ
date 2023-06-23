@@ -13,6 +13,7 @@
 
 #include "Decorator.h"
 #include "Window.h"
+#include "KWindow.h"//khidki
 #include "Screen.h"
 
 
@@ -34,6 +35,20 @@ MagneticBorder::AlterDeltaForSnap(Window* window, BPoint& delta, bigtime_t now)
 
 	return AlterDeltaForSnap(window->Screen(), frame, delta, now);
 }
+
+
+//khidki start
+bool
+MagneticBorder::K_AlterDeltaForSnap(K_Window* window, BPoint& delta, bigtime_t now)
+{
+	BRect frame = window->Frame();
+	Decorator* decorator = window->Decorator();
+	if (decorator)
+		frame = decorator->GetFootprint().Frame();
+
+	return AlterDeltaForSnap(window->Screen(), frame, delta, now);
+}
+//end
 
 
 bool

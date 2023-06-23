@@ -23,7 +23,7 @@ AddFilesToPackage add-ons kernel partitioning_systems
 AddFilesToPackage add-ons control_look : BeControlLook FlatControlLook ;
 
 # Decorators
-AddFilesToPackage add-ons decorators : BeDecorator FlatDecorator ;
+AddFilesToPackage add-ons decorators : BeDecorator FlatDecorator HakiWinXDecor ;
 
 
 BuildHaikuPackage $(extrasPackage) : haiku_extras ;

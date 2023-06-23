@@ -63,7 +63,8 @@ target desktop {
 }
 
 target first_boot {
-	job x-vnd.Haiku-FirstBootPrompt
+	# job x-vnd.Haiku-FirstBootPrompt
+	job x-vnd.Haiku-tst
 }
 
 target installer {

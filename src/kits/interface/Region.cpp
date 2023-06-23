@@ -18,6 +18,16 @@
 #include "clipping.h"
 #include "RegionSupport.h"
 
+//khidki code
+//start
+//#define TRACE_DEBUG_SERVER
+#ifdef TRACE_DEBUG_SERVER
+#	define TTRACE(x) debug_printf x
+#else
+#	define TTRACE(x) ;
+#endif
+//end
+
 
 const static int32 kDataBlockSize = 8;
 
@@ -57,6 +67,17 @@ BRegion::BRegion(const BRect rect)
 	fBounds = _ConvertToInternal(rect);
 	fCount = 1;
 }
+
+
+//khidki start
+void Merge(BRegion &first, BRegion &second)
+{/*
+first.fCount += second.fCounf;
+first.fDataSize += second.fDataSize;
+first.fData += second.fData;
+*/
+}
+//end
 
 
 // NOTE: private constructor
@@ -250,6 +271,18 @@ BRegion::PrintToStream() const
 			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
 	}
 }
+
+
+clipping_rect* BRegion::get_DataArray(int i)
+{
+//if (i >= 0 && i < fCount) {
+//		const clipping_rect& r = fData[i];
+//		return r;//BRect(r.left, r.top, r.right - 1, r.bottom - 1);
+//	}
+clipping_rect *rect = &fData[i];
+return rect;
+}
+//end
 
 
 void

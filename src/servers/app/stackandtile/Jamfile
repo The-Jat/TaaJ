@@ -15,10 +15,16 @@ UseHeaders [ FDirName $(HAIKU_TOP) src servers app drawing Painter ] ;
 local sources =
 	SATDecorator.cpp
 	SATGroup.cpp
+KSATGroup.cpp
 	SATWindow.cpp
+KSATWindow.cpp
 	StackAndTile.cpp
 	Stacking.cpp
-	Tiling.cpp ;
+KStacking.cpp
+	Tiling.cpp
+KTiling.cpp
+	KStackAndTile.cpp
+	;
 
 Includes [ FGristFiles $(sources) ]
 	: [ BuildFeatureAttribute freetype : headers ] ;

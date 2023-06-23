@@ -48,6 +48,16 @@
 #	define STRACE(x) ;
 #endif
 
+//khidki code
+//start
+//#define TRACE_DEBUG_SERVER
+#ifdef TRACE_DEBUG_SERVER
+#	define TTRACE(x) debug_printf x
+#else
+#	define TTRACE(x) ;
+#endif
+//end
+
 
 static bool
 int_equal(float x, float y)
@@ -71,6 +81,7 @@ TabDecorator::TabDecorator(DesktopSettings& settings, BRect frame,
 	Decorator(settings, frame, desktop),
 	fOldMovingTab(0, 0, -1, -1)
 {
+debug_printf("[TabDecorator]{ TabDecorator}...\n");
 	STRACE(("TabDecorator:\n"));
 	STRACE(("\tFrame (%.1f,%.1f,%.1f,%.1f)\n",
 		frame.left, frame.top, frame.right, frame.bottom));

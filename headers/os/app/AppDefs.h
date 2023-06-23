@@ -92,6 +92,14 @@ enum {
 };
 
 
+//khidki start
+enum {
+	//B_ABOUT_REQUESTED			= '_ABR',
+	K_WINDOW_ACTIVATED			= 'ACTI'
+};
+//end
+
+
 // Other Commands
 enum {
 	B_SET_PROPERTY				= 'PSET',

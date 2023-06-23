@@ -34,6 +34,7 @@ class ServerPicture;
 class ServerCursor;
 class ServerBitmap;
 class ServerWindow;
+class KServerWindow;//khidki
 
 namespace BPrivate {
 	class PortLink;
@@ -77,6 +78,12 @@ public:
 
 			bool				AddWindow(ServerWindow* window);
 			void				RemoveWindow(ServerWindow* window);
+//khidki start
+			bool				K_AddWindow(KServerWindow* window);
+			void				K_RemoveWindow(KServerWindow* window);
+			bool				K_InWorkspace(int32 index) const;
+//khidki end
+
 			bool				InWorkspace(int32 index) const;
 			uint32				Workspaces() const;
 			int32				InitialWorkspace() const
@@ -107,8 +114,15 @@ private:
 			status_t			_CreateWindow(int32 code,
 									BPrivate::LinkReceiver& link,
 									port_id& clientReplyPort);
+//khidki code
+status_t			_CreateKWindow(int32 code,
+						BPrivate::LinkReceiver& link,
+						port_id& clientReplyPort);
+//end
+
 
 			bool				_HasWindowUnderMouse();
+bool	K__HasWindowUnderMouse();//khidki
 
 			bool				_AddBitmap(ServerBitmap* bitmap);
 			void				_DeleteBitmap(ServerBitmap* bitmap);
@@ -141,6 +155,10 @@ private:
 	mutable	BLocker				fWindowListLock;
 			BObjectList<ServerWindow> fWindowList;
 			BPrivate::BTokenSpace fViewTokens;
+//khidki start
+mutable	BLocker				k_fWindowListLock;
+BObjectList<KServerWindow> k_fWindowList;
+//khidki end
 
 			int32				fInitialWorkspace;
 			uint32				fTemporaryDisplayModeChange;
@@ -162,6 +180,8 @@ private:
 			bool				fIsActive;
 
 			BReference<ClientMemoryAllocator> fMemoryAllocator;
+
+bool IsKWindow;//khidki for knowing that it is called from KWindow...
 
 			AppFontManager*		fAppFontManager;
 };

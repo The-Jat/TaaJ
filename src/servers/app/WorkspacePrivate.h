@@ -11,6 +11,7 @@
 
 #include "ScreenConfigurations.h"
 #include "WindowList.h"
+#include "KWindowList.h"//khidki
 #include "Workspace.h"
 
 #include <Accelerant.h>
@@ -31,8 +32,11 @@ public:
 								~Private();
 
 			int32				Index() const { return fWindows.Index(); }
+int32	K_Index() const { return k_fWindows.Index(); }//khidki
+
 
 			WindowList&			Windows() { return fWindows; }
+K_WindowList&	K_Windows() { return k_fWindows; }//khidki
 
 			// displays
 
@@ -60,6 +64,7 @@ private:
 			void				_SetDefaults();
 
 			WindowList			fWindows;
+K_WindowList			k_fWindows;//khidki
 
 			BObjectList<display_info> fDisplays;
 

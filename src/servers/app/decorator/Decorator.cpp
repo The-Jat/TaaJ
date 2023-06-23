@@ -27,6 +27,15 @@
 #include "DesktopSettings.h"
 #include "DrawingEngine.h"
 
+//khidki code
+//start
+//#define TRACE_DEBUG_SERVER
+#ifdef TRACE_DEBUG_SERVER
+#	define TTRACE(x) debug_printf x
+#else
+#	define TTRACE(x) ;
+#endif
+//end
 
 Decorator::Tab::Tab()
 	:
@@ -105,6 +114,7 @@ Decorator::Decorator(DesktopSettings& settings, BRect frame,
 	fDesktop(desktop),
 	fFootprintValid(false)
 {
+debug_printf("[Decorator]{ Decorator}...\n");
 	memset(&fRegionHighlights, HIGHLIGHT_NONE, sizeof(fRegionHighlights));
 }
 
@@ -241,6 +251,7 @@ Decorator::SetDrawingEngine(DrawingEngine* engine)
 void
 Decorator::SetFlags(int32 tab, uint32 flags, BRegion* updateRegion)
 {
+debug_printf("[Decorator]{ SetFlags}...\n");
 	AutoWriteLocker _(fLocker);
 
 	// we're nice to our subclasses - we make sure B_NOT_{H|V|}_RESIZABLE
@@ -1082,6 +1093,7 @@ Decorator::_SetLook(Decorator::Tab* tab, DesktopSettings& settings,
 void
 Decorator::_SetFlags(Decorator::Tab* tab, uint32 flags, BRegion* updateRegion)
 {
+debug_printf("[Decorator]{ _SetFlags}...\n");
 	// TODO: we could be much smarter about the update region
 
 	// get previous extent

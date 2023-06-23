@@ -31,6 +31,7 @@
 
 #include <AppServerLink.h>
 #include <DragTrackingFilter.h>
+#include <KLayout.h> //khidki
 #include <binary_compatibility/Interface.h>
 #include <ServerProtocol.h>
 #include <ViewPrivate.h>

@@ -334,7 +334,7 @@ WinDecorator::_DrawTab(Decorator::Tab* tab, BRect rect)
 		return;
 	}
 
-	fDrawingEngine->FillRect(tabRect & rect, fTabColor);
+//	fDrawingEngine->FillRect(tabRect & rect, fTabColor);
 
 	_DrawTitle(tab, tabRect);
 

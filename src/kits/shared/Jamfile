@@ -36,6 +36,12 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 			CommandPipe.cpp
 			DateTimeEdit.cpp
 			DragTrackingFilter.cpp
+			
+# khidki start 
+KCalendarView.cpp
+KDragTrackingFilter.cpp
+# khidki end
+			
 			DriverSettingsMessageAdapter.cpp
 			HashString.cpp
 			IconButton.cpp

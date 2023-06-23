@@ -22,6 +22,7 @@
 #include <Message.h>
 #include <Region.h>
 
+#include <KLayout.h> //khidki
 #include <binary_compatibility/Interface.h>
 
 enum internalFlags {

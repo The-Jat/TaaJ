@@ -23,6 +23,7 @@
 
 
 class BBitmap;
+class KBitmap;//khidki
 class BRect;
 
 
@@ -103,6 +104,63 @@ class IconRenderer {
 			Transformation		fGlobalTransform;
 };
 
+
+//khidki start
+class KIconRenderer {
+ public:
+								KIconRenderer(KBitmap* bitmap);
+	virtual						~KIconRenderer();
+
+			void				SetIcon(const Icon* icon);
+
+			void				Render();
+			void				Render(const BRect& area);
+
+			void				SetScale(double scale);
+			void				SetBackground(const KBitmap* background);
+									// background is not copied,
+									// ownership stays with the caller
+									// colorspace and size need to
+									// be the same as bitmap passed
+									// to constructor
+			void				SetBackground(const agg::rgba8& color);
+									// used when no background bitmap
+									// is set
+
+			const _ICON_NAMESPACE GammaTable& GammaTable() const
+									{ return fGammaTable; }
+
+			void				Demultiply();
+
+ private:
+		class StyleHandler;
+
+			void				_Render(const BRect& area);
+			void				_CommitRenderPass(StyleHandler& styleHandler,
+									bool reset = true);
+
+			KBitmap*			fBitmap;
+			const KBitmap*		fBackground;
+			agg::rgba8			fBackgroundColor;
+			const Icon*			fIcon;
+
+			_ICON_NAMESPACE GammaTable fGammaTable;
+
+			RenderingBuffer		fRenderingBuffer;
+			PixelFormat			fPixelFormat;
+			PixelFormatPre		fPixelFormatPre;
+			BaseRenderer		fBaseRenderer;
+			BaseRendererPre		fBaseRendererPre;
+
+			Scanline			fScanline;
+			BinaryScanline		fBinaryScanline;
+			SpanAllocator		fSpanAllocator;
+
+			CompoundRasterizer	fRasterizer;
+
+			Transformation		fGlobalTransform;
+};
+//end
 
 _END_ICON_NAMESPACE
 

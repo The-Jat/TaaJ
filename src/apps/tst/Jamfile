@@ -1,0 +1,27 @@
+SubDir HAIKU_TOP src apps tst ;
+
+UseHeaders [ FDirName $(HAIKU_COMMON_PLATFORM_OBJECT_DIR) data keymaps ] ;
+UsePrivateHeaders app interface locale shared ;
+UsePrivateHeaders headers private system ;
+UsePrivateHeaders [ FDirName kernel disk_device_manager ] ;
+UsePrivateHeaders [ FDirName kernel fs ] ;
+UsePrivateHeaders [ FDirName kernel util ] ;
+UsePrivateHeaders net shared storage ;
+UsePrivateSystemHeaders ;
+
+# Includes [ FGristFiles BootPromptWindow.cpp ] : <keymap-locale>KeymapNames.h ;
+
+# SEARCH_SOURCE += [ FDirName $(HAIKU_TOP) src preferences keymap ] ;
+
+Application tst :
+	app.cpp
+	: be translation shared [ TargetLibstdc++ ] localestub
+	: tst.rdef
+;
+
+DoCatalogs tst :
+	x-vnd.Haiku-tst
+	:
+	app.cpp
+;
+

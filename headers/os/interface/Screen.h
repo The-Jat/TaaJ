@@ -14,6 +14,7 @@
 
 class BBitmap;
 class BWindow;
+class KWindow;//khidki
 
 namespace BPrivate {
 	class BPrivateScreen;
@@ -24,6 +25,7 @@ class BScreen {
 public:  
 								BScreen(screen_id id = B_MAIN_SCREEN_ID);
 								BScreen(BWindow* window);
+	BScreen(KWindow* window);//khidki
 								~BScreen();
 
 			bool				IsValid();

@@ -77,6 +77,7 @@ private:
 private:
 	friend class BApplication;
 	friend class BView;
+	friend class KView;//khidki
 
 			int32				fServerToken;
 			bool				fNeedToFree;

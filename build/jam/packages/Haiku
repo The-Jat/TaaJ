@@ -324,5 +324,13 @@ CopyDirectoryToPackage documentation
 # empty directory
 AddDirectoryToPackage data empty ;
 
+# Control Looks
+AddFilesToPackage add-ons control_look : BeControlLook FlatControlLook WinXControlLook ;
+
+# Decorators
+AddFilesToPackage add-ons decorators : BeDecorator FlatDecorator HakiWinXDecor ;
+
+
+
 
 BuildHaikuPackage $(haikuPackage) : haiku ;

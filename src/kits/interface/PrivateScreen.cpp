@@ -25,6 +25,7 @@
 #include <Locker.h>
 #include <ObjectList.h>
 #include <Window.h>
+#include <Khidki.h>//khidki
 
 #include <AutoLocker.h>
 
@@ -102,6 +103,27 @@ BPrivateScreen::Get(BWindow* window)
 
 	return _Get(id, false);
 }
+
+
+//khidki start
+BPrivateScreen*
+BPrivateScreen::K_Get(KWindow* window)
+{
+	int32 id = B_MAIN_SCREEN_ID.id;
+
+	if (window != NULL) {
+		BPrivate::AppServerLink link;
+		link.StartMessage(AS_GET_SCREEN_ID_FROM_WINDOW_2);
+		link.Attach<int32>(_get_object_token_(window));
+
+		status_t status;
+		if (link.FlushWithReply(status) == B_OK && status == B_OK)
+			link.Read<int32>(&id);
+	}
+
+	return _Get(id, false);
+}
+//end
 
 
 BPrivateScreen*

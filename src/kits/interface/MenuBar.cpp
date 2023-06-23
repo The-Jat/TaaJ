@@ -21,6 +21,7 @@
 #include <Window.h>
 
 #include <AppMisc.h>
+#include <KLayout.h> //khidki
 #include <binary_compatibility/Interface.h>
 #include <MenuPrivate.h>
 #include <TokenSpace.h>

@@ -26,6 +26,7 @@
 #include <String.h>
 #include <Window.h>
 
+#include <KLayout.h> //khidki
 #include <binary_compatibility/Interface.h>
 
 

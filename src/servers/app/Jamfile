@@ -12,6 +12,9 @@ UseHeaders [ FDirName $(HAIKU_TOP) src servers app stackandtile ] ;
 
 UseHeaders [ FDirName $(HAIKU_TOP) src servers app decorator ] ;
 local decorator_src =
+KDecorManager.cpp
+KDefaultWindowBehaviour.cpp
+KWindowBehaviour.cpp
 	DecorManager.cpp
 	Decorator.cpp
 	DefaultDecorator.cpp
@@ -59,6 +62,9 @@ Server app_server :
 	Angle.cpp
 	AppServer.cpp
 	#BitfieldRegion.cpp
+Bitu.cpp
+Aayat.cpp
+chitrkaar.cpp
 	BitmapManager.cpp
 	Canvas.cpp
 	ClientMemoryAllocator.cpp
@@ -101,6 +107,15 @@ Server app_server :
 	WindowList.cpp
 	Workspace.cpp
 	WorkspacesView.cpp
+
+KDesktopListener.cpp
+KServerWindow.cpp
+KWindow.cpp
+KWindowList.cpp
+KView.cpp
+KWorkspacesView.cpp
+KOffscreenServerWindow.cpp
+KOffscreenWindow.cpp
 
 	$(decorator_src)
 	$(font_src)

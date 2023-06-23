@@ -51,6 +51,7 @@
 #include <UnicodeChar.h>
 #include <WindowPrivate.h>
 
+#include <KLayout.h> //khidki
 #include <binary_compatibility/Interface.h>
 #include <input_globals.h>
 #include <tracker_private.h>

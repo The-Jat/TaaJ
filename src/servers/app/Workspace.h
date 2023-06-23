@@ -14,6 +14,7 @@
 
 class Desktop;
 class Window;
+class K_Window;//khidki
 
 
 /*!	Workspace objects are intended to be short-lived. You create them while
@@ -37,6 +38,11 @@ public:
 									BPoint& _leftTop);
 			status_t			GetPreviousWindow(Window*& _window,
 									BPoint& _leftTop);
+//khidki start
+status_t	K_GetNextWindow(K_Window*& _window, BPoint& _leftTop);
+status_t	K_GetPreviousWindow(K_Window*& _window, BPoint& _leftTop);//khidki
+//end
+
 			void				RewindWindows();
 
 	class Private;
@@ -45,6 +51,7 @@ private:
 			Workspace::Private&	fWorkspace;
 			Desktop&			fDesktop;
 			Window*				fCurrent;
+K_Window*	k_fCurrent;//khidki
 			bool				fCurrentWorkspace;
 };
 

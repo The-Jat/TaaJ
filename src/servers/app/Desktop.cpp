@@ -44,6 +44,7 @@
 #include "AppServer.h"
 #include "ClickTarget.h"
 #include "DecorManager.h"
+#include "KDecorManager.h"//khidki
 #include "DesktopSettingsPrivate.h"
 #include "DrawingEngine.h"
 #include "GlobalFontManager.h"
@@ -58,8 +59,10 @@
 #include "SystemPalette.h"
 #include "WindowPrivate.h"
 #include "Window.h"
+#include "KWindow.h"//khidki
 #include "Workspace.h"
 #include "WorkspacesView.h"
+#include "KWorkspacesView.h"//khidki
 
 #if TEST_MODE
 #	include "EventStream.h"
@@ -73,6 +76,8 @@
 #	define STRACE(a) ;
 #endif
 
+#define TESTING__BWindow //khidki
+#define DEBUG_DESKTOP_K_Window//khidki
 
 static inline float
 square_vector_length(float x, float y)
@@ -94,10 +99,17 @@ class KeyboardFilter : public EventFilter {
 
 		virtual filter_result Filter(BMessage* message, EventTarget** _target,
 			int32* _viewToken, BMessage* latestMouseMoved);
+//khidki start
+virtual filter_result K_Filter(BMessage* message, EventTarget** _target,
+			int32* _viewToken, BMessage* latestMouseMoved);
+//end
+
 		virtual void RemoveTarget(EventTarget* target);
 
 	private:
 		void _UpdateFocus(int32 key, uint32 modifiers, EventTarget** _target);
+
+void K__UpdateFocus(int32 key, uint32 modifiers, EventTarget** _target);//khidki
 
 		Desktop*		fDesktop;
 		EventTarget*	fLastFocus;
@@ -111,6 +123,11 @@ public:
 
 	virtual filter_result Filter(BMessage* message, EventTarget** _target,
 		int32* _viewToken, BMessage* latestMouseMoved);
+//khidki start
+virtual filter_result K_Filter(BMessage* message, EventTarget** _target,
+		int32* _viewToken, BMessage* latestMouseMoved);
+//end
+
 
 private:
 	Desktop*	fDesktop;
@@ -119,6 +136,8 @@ private:
 	int32		fResetClickCount;
 	BPoint		fLastClickPoint;
 	ClickTarget	fLastClickTarget;
+
+ClickTarget	k_fLastClickTarget;//khidki
 };
 
 
@@ -178,6 +197,54 @@ KeyboardFilter::_UpdateFocus(int32 key, uint32 modifiers, EventTarget** _target)
 }
 
 
+//khidki start
+void
+KeyboardFilter::K__UpdateFocus(int32 key, uint32 modifiers, EventTarget** _target)
+{
+debug_printf("[KeyboardFilter]{K__UpdateFocus}\n");
+
+	if (!fDesktop->LockSingleWindow())
+		return;
+
+	EventTarget* focus = fDesktop->KeyboardEventTarget();
+
+#if 0
+	bigtime_t now = system_time();
+
+	// TODO: this is a try to not steal focus from the current window
+	//	in case you enter some text and a window pops up you haven't
+	//	triggered yourself (like a pop-up window in your browser while
+	//	you're typing a password in another window) - maybe this should
+	//	be done differently, though (using something like B_LOCK_WINDOW_FOCUS)
+	//	(at least B_WINDOW_ACTIVATED must be postponed)
+
+	if (fLastFocus == NULL
+		|| (focus != fLastFocus && now - fTimestamp > 100000)) {
+		// if the time span between the key presses is very short
+		// we keep our previous focus alive - this is safe even
+		// if the target doesn't exist anymore, as we don't reset
+		// it, and the event focus passed in is always valid (or NULL)
+		*_target = focus;
+		fLastFocus = focus;
+	}
+#endif
+	*_target = focus;
+	fLastFocus = focus;
+
+	fDesktop->UnlockSingleWindow();
+
+#if 0
+	// we always allow to switch focus after the enter key has pressed
+	if (key == B_ENTER || modifiers == B_COMMAND_KEY
+		|| modifiers == B_CONTROL_KEY || modifiers == B_OPTION_KEY)
+		fTimestamp = 0;
+	else
+		fTimestamp = now;
+#endif
+}
+//end
+
+
 filter_result
 KeyboardFilter::Filter(BMessage* message, EventTarget** _target,
 	int32* /*_viewToken*/, BMessage* /*latestMouseMoved*/)
@@ -233,6 +300,63 @@ KeyboardFilter::Filter(BMessage* message, EventTarget** _target,
 }
 
 
+//khidki start
+filter_result
+KeyboardFilter::K_Filter(BMessage* message, EventTarget** _target,
+	int32* /*_viewToken*/, BMessage* /*latestMouseMoved*/)
+{
+	int32 key = 0;
+	int32 modifiers = 0;
+
+	message->FindInt32("key", &key);
+	message->FindInt32("modifiers", &modifiers);
+
+	if ((message->what == B_KEY_DOWN || message->what == B_UNMAPPED_KEY_DOWN)) {
+		// Check for safe video mode (shift + cmd + ctrl + escape)
+		if (key == 0x01 && (modifiers & B_COMMAND_KEY) != 0
+			&& (modifiers & B_CONTROL_KEY) != 0
+			&& (modifiers & B_SHIFT_KEY) != 0) {
+			system("screenmode --fall-back &");
+			return B_SKIP_MESSAGE;
+		}
+
+		bool takeWindow = (modifiers & B_SHIFT_KEY) != 0
+			|| fDesktop->K_MouseEventWindow() != NULL;
+		if (key >= B_F1_KEY && key <= B_F12_KEY) {
+			// workspace change
+
+#if !TEST_MODE
+			if ((modifiers & (B_COMMAND_KEY | B_CONTROL_KEY | B_OPTION_KEY))
+					== B_COMMAND_KEY)
+#else
+			if ((modifiers & B_CONTROL_KEY) != 0)
+#endif
+			{
+				STRACE(("Set Workspace %" B_PRId32 "\n", key - 1));
+
+				fDesktop->K_SetWorkspaceAsync(key - B_F1_KEY, takeWindow);
+				return B_SKIP_MESSAGE;
+			}
+		} else if (key == 0x11
+			&& (modifiers & (B_COMMAND_KEY | B_CONTROL_KEY | B_OPTION_KEY))
+					== B_COMMAND_KEY) {
+			// switch to previous workspace (command + `)
+			fDesktop->K_SetWorkspaceAsync(-1, takeWindow);
+			return B_SKIP_MESSAGE;
+		}
+	}
+
+	if (message->what == B_KEY_DOWN
+		|| message->what == B_MODIFIERS_CHANGED
+		|| message->what == B_UNMAPPED_KEY_DOWN
+		|| message->what == B_INPUT_METHOD_EVENT)
+		K__UpdateFocus(key, modifiers, _target);
+
+	return fDesktop->K_KeyEvent(message->what, key, modifiers);
+}
+//end
+
+
 void
 KeyboardFilter::RemoveTarget(EventTarget* target)
 {
@@ -251,7 +375,8 @@ MouseFilter::MouseFilter(Desktop* desktop)
 	fLastClickModifiers(0),
 	fResetClickCount(0),
 	fLastClickPoint(),
-	fLastClickTarget()
+	fLastClickTarget(),
+	k_fLastClickTarget()//khidki
 {
 }
 
@@ -276,6 +401,17 @@ MouseFilter::Filter(BMessage* message, EventTarget** _target, int32* _viewToken,
 	Window* window = fDesktop->MouseEventWindow();
 	if (window == NULL)
 		window = fDesktop->WindowAt(where);
+
+//khidki start
+	K_Window* window1 = fDesktop->K_MouseEventWindow();
+	if (window1 == NULL)
+	{
+	//#ifdef TESTING
+	debug_printf("[MouseFilter]{Filter}window1==NULL\n");
+	//#endif
+		window1 = fDesktop->K_WindowAt(where);
+	}
+//end
 
 	if (window != NULL) {
 		// dispatch event to the window
@@ -390,6 +526,145 @@ MouseFilter::Filter(BMessage* message, EventTarget** _target, int32* _viewToken,
 }
 
 
+//khidki start
+filter_result
+MouseFilter::K_Filter(BMessage* message, EventTarget** _target, int32* _viewToken,
+	BMessage* latestMouseMoved)
+{
+debug_printf("[MouseFilter]{K_Filter}\n");
+
+	BPoint where;
+	if (message->FindPoint("where", &where) != B_OK)
+		return B_DISPATCH_MESSAGE;
+
+	int32 buttons;
+	if (message->FindInt32("buttons", &buttons) != B_OK)
+		buttons = 0;
+
+	if (!fDesktop->LockAllWindows())
+		return B_DISPATCH_MESSAGE;
+
+	int32 viewToken = B_NULL_TOKEN;
+
+	K_Window* window = fDesktop->K_MouseEventWindow();
+	if (window == NULL)
+		window = fDesktop->K_WindowAt(where);
+
+	if (window != NULL) {
+	debug_printf("[MouseFilter]{K_Filter} window != NULL\n");
+		// dispatch event to the window
+		switch (message->what) {
+			case B_MOUSE_DOWN:
+			{
+				int32 windowToken = window->KServerWindow()->ServerToken();
+
+				// First approximation of click count validation. We reset the
+				// click count when modifiers or pressed buttons have changed
+				// or when we've got a different click target, or when the
+				// previous click location is too far from the new one. We can
+				// only check the window of the click target here; we'll recheck
+				// after asking the window.
+				int32 modifiers = message->FindInt32("modifiers");
+
+				int32 originalClickCount = message->FindInt32("clicks");
+				if (originalClickCount <= 0)
+					originalClickCount = 1;
+
+				int32 clickCount = originalClickCount;
+				if (clickCount > 1) {
+					if (modifiers != fLastClickModifiers
+						|| buttons != fLastClickButtons
+						|| !fLastClickTarget.IsValid()
+						|| fLastClickTarget.WindowToken() != windowToken
+						|| square_distance(where, fLastClickPoint) >= 16
+						|| clickCount - fResetClickCount < 1) {
+						clickCount = 1;
+					} else
+						clickCount -= fResetClickCount;
+				}
+
+				// notify the window
+				ClickTarget clickTarget;
+				window->MouseDown(message, where, fLastClickTarget, clickCount,
+					clickTarget);
+
+				// If the click target changed, always reset the click count.
+				if (clickCount != 1 && clickTarget != fLastClickTarget)
+					clickCount = 1;
+
+				// update our click count management attributes
+				fResetClickCount = originalClickCount - clickCount;
+				fLastClickTarget = clickTarget;
+				fLastClickButtons = buttons;
+				fLastClickModifiers = modifiers;
+				fLastClickPoint = where;
+
+				// get the view token from the click target
+				if (clickTarget.GetType() == ClickTarget::TYPE_WINDOW_CONTENTS)
+					viewToken = clickTarget.WindowElement();
+
+				// update the message's "clicks" field, if necessary
+				if (clickCount != originalClickCount) {
+					if (message->HasInt32("clicks"))
+						message->ReplaceInt32("clicks", clickCount);
+					else
+						message->AddInt32("clicks", clickCount);
+				}
+
+				// notify desktop listeners
+				fDesktop->K_NotifyMouseDown(window, message, where);
+				break;
+			}
+
+			case B_MOUSE_UP:
+				window->MouseUp(message, where, &viewToken);
+				if (buttons == 0)
+					fDesktop->K_SetMouseEventWindow(NULL);
+				fDesktop->K_NotifyMouseUp(window, message, where);
+				break;
+
+			case B_MOUSE_MOVED:
+				window->MouseMoved(message, where, &viewToken,
+					latestMouseMoved == NULL || latestMouseMoved == message,
+					false);
+				fDesktop->K_NotifyMouseMoved(window, message, where);
+				break;
+		}
+
+		if (viewToken != B_NULL_TOKEN) {
+			fDesktop->K_SetViewUnderMouse(window, viewToken);
+
+			*_viewToken = viewToken;
+			*_target = &window->EventTarget();
+		}
+	} else if (message->what == B_MOUSE_DOWN) {
+		// the mouse-down didn't hit a window -- reset the click target
+		fResetClickCount = 0;
+		fLastClickTarget = ClickTarget();
+		fLastClickButtons = message->FindInt32("buttons");
+		fLastClickModifiers = message->FindInt32("modifiers");
+		fLastClickPoint = where;
+	}
+
+	if (window == NULL || viewToken == B_NULL_TOKEN) {
+		// mouse is not over a window or over a decorator
+		fDesktop->K_SetViewUnderMouse(window, B_NULL_TOKEN);
+		fDesktop->SetCursor(NULL);
+
+		*_target = NULL;
+	}
+
+	fDesktop->K_SetLastMouseState(where, buttons, window);
+
+	fDesktop->K_NotifyMouseEvent(message);
+
+	fDesktop->UnlockAllWindows();
+
+	return B_DISPATCH_MESSAGE;
+}
+//end
+
+
 //	#pragma mark -
 
 
@@ -429,23 +704,35 @@ Desktop::Desktop(uid_t userID, const char* targetScreen)
 	fAllWindows(kAllWindowList),
 	fSubsetWindows(kSubsetList),
 	fFocusList(kFocusList),
+k_fAllWindows(k_kAllWindowList),//khidki
+k_fSubsetWindows(k_kSubsetList),//khidki
+k_fFocusList(k_kFocusList),//khidki
 	fWorkspacesViews(false),
 
 	fWorkspacesLock("workspaces list"),
+k_fWorkspacesViews(false),//khidki
+k_fWorkspacesLock("workspaces list2"),//khidki
 	fWindowLock("window lock"),
 
 	fMouseEventWindow(NULL),
+k_fMouseEventWindow(NULL),//khidki
 	fWindowUnderMouse(NULL),
+k_fWindowUnderMouse(NULL),//khidki
 	fLockedFocusWindow(NULL),
+k_fLockedFocusWindow(NULL),//khidki
 	fViewUnderMouse(B_NULL_TOKEN),
 	fLastMousePosition(B_ORIGIN),
 	fLastMouseButtons(0),
 
 	fFocus(NULL),
 	fFront(NULL),
-	fBack(NULL)
+	fBack(NULL),
+k_fFocus(NULL),
+k_fFront(NULL),
+k_fBack(NULL)
 {
 	memset(fLastWorkspaceFocus, 0, sizeof(fLastWorkspaceFocus));
+memset(k_fLastWorkspaceFocus, 0, sizeof(k_fLastWorkspaceFocus));//khidki
 
 	char name[B_OS_NAME_LENGTH];
 	Desktop::_GetLooperName(name, sizeof(name));
@@ -463,6 +750,19 @@ Desktop::Desktop(uid_t userID, const char* targetScreen)
 		= gDecorManager.GetDesktopListeners();
 	for (int i = 0; i < newListeners.CountItems(); i++)
  		RegisterListener(newListeners.ItemAt(i));
+ 
+ //khidki start
+	K_RegisterListener(&k_fStackAndTile);
+
+debug_printf("[Desktop] {constructor} before registering K_RegisterListener \n");
+const K_DesktopListenerList& k_newListeners
+		= k_gDecorManager.GetDesktopListeners();
+debug_printf("[Desktop] {constructor} k_newListeners.countItems=%d \n",k_newListeners.CountItems());
+	for (int i = 0; i < k_newListeners.CountItems(); i++)
+ 		K_RegisterListener(k_newListeners.ItemAt(i));
+
+debug_printf("[Desktop] {constructor} after registering K_RegisterListener \n");
+//end
 }
 
 
@@ -481,6 +781,16 @@ Desktop::RegisterListener(DesktopListener* listener)
 {
 	DesktopObservable::RegisterListener(listener, this);
 }
+
+
+//khidki start
+void
+Desktop::K_RegisterListener(K_DesktopListener* listener)
+{
+debug_printf("[Desktop] {K_RegisterListener} \n");
+	K_DesktopObservable::K_RegisterListener(listener, this);
+}
+//end
 
 
 /*!	This method is allowed to throw exceptions.
@@ -594,6 +904,170 @@ Desktop::Init()
 }
 
 
+void Desktop::get_Painter()
+{
+	fPainter=fVirtualScreen.DrawingEngine()->get_Painter();
+}
+
+void Desktop::get_Buffer()
+{
+	fBuffer = fPainter->fRenderingBuffer;
+}
+void Desktop::draw_something()
+{
+fb_ptr = (unsigned int *)fPainter->fb_addr();
+scr_width = fPainter->get_width();
+scr_height = fPainter->get_height();
+//unsigned int *ptr;
+
+ptr=(unsigned int *)fPainter->fb_addr();//fBuffer->Bits();
+for(int i=0;i<1024*768;i++)
+{
+*ptr=0xffff0000;
+ptr++;
+}
+}
+void Desktop::draw_physical_pixel(const Int_Point& physical_position, int color)
+{
+unsigned int *fb=(unsigned int *)fPainter->fb_addr();
+debug_printf("draw_physical_pixel...\n");
+debug_printf("width=%d",fPainter->get_width());
+debug_printf("height=%d",fPainter->get_height());
+int temp=physical_position.y()*fPainter->get_width()+physical_position.x();
+fb=fb+temp;
+*fb=0xff0000ff;
+}
+
+void Desktop::draw_line(const Int_Point& p1, const Int_Point& p2, int col, int thickness)//, LineStyle style)
+{
+    //if (color.alpha() == 0)
+     //   return;
+
+//    auto clip_rect = this->clip_rect() * scale();
+
+  //  auto point1 = to_physical(p1);
+   // auto point2 = to_physical(p2);
+   // thickness *= scale();
+
+const int x=p1.x();
+    // Special case: vertical line.
+ //   if (point1.x() == point2.x()) {
+  //      const int x = point1.x();
+     //   if (x < clip_rect.left() || x > clip_rect.right())
+      //      return;
+      //  if (point1.y() > point2.y())
+     //       swap(point1, point2);
+       // if (point1.y() > clip_rect.bottom())
+        //    return;
+       // if (point2.y() < clip_rect.top())
+       //     return;
+       // int min_y = max(point1.y(), clip_rect.top());
+       // int max_y = min(point2.y(), clip_rect.bottom());
+       // if (style == LineStyle::Dotted) {
+       int min_y=p1.y();
+       int max_y=p2.y();
+            for (int y = min_y; y <= max_y; y += thickness * 2)
+                draw_physical_pixel({ x, y }, col);//, thickness);
+      /*  } else if (style == LineStyle::Dashed) {
+            for (int y = min_y; y <= max_y; y += thickness * 6) {
+                draw_physical_pixel({ x, y }, color, thickness);
+                draw_physical_pixel({ x, min(y + thickness, max_y) }, color, thickness);
+                draw_physical_pixel({ x, min(y + thickness * 2, max_y) }, color, thickness);
+            }
+        } else {
+            for (int y = min_y; y <= max_y; y += thickness)
+                draw_physical_pixel({ x, y }, color, thickness);
+        }
+        return;
+    }
+
+    // Special case: horizontal line.
+    if (point1.y() == point2.y()) {
+        const int y = point1.y();
+        if (y < clip_rect.top() || y > clip_rect.bottom())
+            return;
+        if (point1.x() > point2.x())
+            swap(point1, point2);
+        if (point1.x() > clip_rect.right())
+            return;
+        if (point2.x() < clip_rect.left())
+            return;
+        int min_x = max(point1.x(), clip_rect.left());
+        int max_x = min(point2.x(), clip_rect.right());
+        if (style == LineStyle::Dotted) {
+            for (int x = min_x; x <= max_x; x += thickness * 2)
+                draw_physical_pixel({ x, y }, color, thickness);
+        } else if (style == LineStyle::Dashed) {
+            for (int x = min_x; x <= max_x; x += thickness * 6) {
+                draw_physical_pixel({ x, y }, color, thickness);
+                draw_physical_pixel({ min(x + thickness, max_x), y }, color, thickness);
+                draw_physical_pixel({ min(x + thickness * 2, max_x), y }, color, thickness);
+            }
+        } else {
+            for (int x = min_x; x <= max_x; x += thickness)
+                draw_physical_pixel({ x, y }, color, thickness);
+        }
+        return;
+    }
+
+    // FIXME: Implement dotted/dashed diagonal lines.
+    VERIFY(style == LineStyle::Solid);
+
+    const int adx = abs(point2.x() - point1.x());
+    const int ady = abs(point2.y() - point1.y());
+
+    if (adx > ady) {
+        if (point1.x() > point2.x())
+            swap(point1, point2);
+    } else {
+        if (point1.y() > point2.y())
+            swap(point1, point2);
+    }
+
+    // FIXME: Implement clipping below.
+    const int dx = point2.x() - point1.x();
+    const int dy = point2.y() - point1.y();
+    int error = 0;
+
+    if (dx > dy) {
+        const int y_step = dy == 0 ? 0 : (dy > 0 ? 1 : -1);
+        const int delta_error = 2 * abs(dy);
+        int y = point1.y();
+        for (int x = point1.x(); x <= point2.x(); ++x) {
+            if (clip_rect.contains(x, y))
+                draw_physical_pixel({ x, y }, color, thickness);
+            error += delta_error;
+            if (error >= dx) {
+                y += y_step;
+                error -= 2 * dx;
+            }
+        }
+    } else {
+        const int x_step = dx == 0 ? 0 : (dx > 0 ? 1 : -1);
+        const int delta_error = 2 * abs(dx);
+        int x = point1.x();
+        for (int y = point1.y(); y <= point2.y(); ++y) {
+            if (clip_rect.contains(x, y))
+                draw_physical_pixel({ x, y }, color, thickness);
+            error += delta_error;
+            if (error >= dy) {
+                x += x_step;
+                error -= 2 * dy;
+            }
+        }
+    }*/
+}
+
+//mak
+void Desktop::bg_change(rgb_color bg)
+{	fScreenRegion = fVirtualScreen.Frame();
+	BRegion stillAvailableOnScreen;
+	_RebuildClippingForAllWindows(stillAvailableOnScreen);
+	//rgb_color bg={255,255,0,255};
+	_SetBackground(stillAvailableOnScreen,bg);
+}
+
+
 /*!	\brief Send a quick (no attachments) message to all applications.
 
 	Quite useful for notification for things like server shutdown, system
@@ -624,6 +1098,29 @@ Desktop::BroadcastToAllWindows(int32 code)
 }
 
 
+//khidki start
+/*!	\brief Send a quick (no attachments) message to all windows.
+*/
+void
+Desktop::K_BroadcastToAllWindows(int32 code)
+{
+#ifdef TESTING__BWindow
+	debug_printf("[Desktop]{K_BroadcastToAllWindows}\n");
+#endif
+
+	AutoReadLocker _(fWindowLock);
+
+	for (K_Window* window = k_fAllWindows.FirstWindow(); window != NULL;
+			window = window->NextWindow(k_kAllWindowList)) {
+		window->KServerWindow()->PostMessage(code);
+	}
+
+#ifdef TESTING__BWindow
+	debug_printf("[Desktop]{BroadcastToAllWindows}\n");
+#endif
+}
+
+
 int32
 Desktop::GetAllWindowTargets(DelayedMessage& message)
 {
@@ -638,6 +1135,24 @@ Desktop::GetAllWindowTargets(DelayedMessage& message)
 
 	return count;
 }
+
+
+//khidki start
+int32
+Desktop::K_GetAllWindowTargets(DelayedMessage& message)
+{
+	AutoReadLocker _(fWindowLock);
+	int32 count = 0;
+
+	for (K_Window* window = k_fAllWindows.FirstWindow(); window != NULL;
+			window = window->NextWindow(k_kAllWindowList)) {
+		message.AddTarget(window->KServerWindow()->MessagePort());
+		++count;
+	}
+
+	return count;
+}
+//end
 
 
 int32
@@ -674,6 +1189,34 @@ Desktop::KeyEvent(uint32 what, int32 key, int32 modifiers)
 
 	return result;
 }
+
+
+//khidki start
+filter_result
+Desktop::K_KeyEvent(uint32 what, int32 key, int32 modifiers)
+{
+debug_printf("[Desktop]{K_KeyEvent}\n");
+
+	filter_result result = B_DISPATCH_MESSAGE;
+	if (LockAllWindows()) {
+		K_Window* window = K_MouseEventWindow();
+		if (window == NULL)
+			window = K_WindowAt(fLastMousePosition);
+
+		if (window != NULL) {
+			if (what == B_MODIFIERS_CHANGED)
+				window->ModifiersChanged(modifiers);
+		}
+
+		if (K_NotifyKeyPressed(what, key, modifiers))
+			result = B_SKIP_MESSAGE;
+
+		UnlockAllWindows();
+	}
+
+	return result;
+}
+//end
 
 
 // #pragma mark - Mouse and cursor methods
@@ -728,6 +1271,31 @@ Desktop::SetLastMouseState(const BPoint& position, int32 buttons,
 			SetFocusWindow(windowUnderMouse);
 	}
 }
+
+
+//khidki start
+void
+Desktop::K_SetLastMouseState(const BPoint& position, int32 buttons,
+	K_Window* windowUnderMouse)
+{
+debug_printf("[Desktop]{K_SetLastMouseState}\n");
+
+	// The all-window-lock is write-locked.
+	fLastMousePosition = position;
+	fLastMouseButtons = buttons;
+
+	if (fLastMouseButtons == 0 && k_fLockedFocusWindow) {
+	debug_printf("[Desktop]{K_SetLastMouseState} fLastMouseButtons == 0 && fLockedFocusWindow\n");
+		k_fLockedFocusWindow = NULL;
+		if (fSettings->FocusFollowsMouse())
+		{
+		debug_printf("[Desktop]{K_SetLastMouseState} fSettings->FocusFollowsMouse\n");
+			K_SetFocusWindow(windowUnderMouse);
+		}
+	}
+debug_printf("[Desktop]{K_SetLastMouseState}end\n");
+}
+//end
 
 
 void
@@ -989,6 +1557,23 @@ Desktop::SetWorkspaceAsync(int32 index, bool moveFocusWindow)
 }
 
 
+//khidki start
+/*!	Changes the current workspace to the one specified by \a index.
+*/
+void
+Desktop::K_SetWorkspaceAsync(int32 index, bool moveFocusWindow)
+{
+debug_printf("[Desktop]{K_SetWorkspaceAsync}\n");
+
+	BPrivate::LinkSender link(MessagePort());
+	link.StartMessage(AS_ACTIVATE_WORKSPACE);
+	link.Attach<int32>(index);
+	link.Attach<bool>(moveFocusWindow);
+	link.Flush();
+}
+//end
+
+
 /*!	Changes the current workspace to the one specified by \a index.
 	You must not hold any window lock when calling this method.
 */
@@ -1093,6 +1678,31 @@ Desktop::AddWorkspacesView(WorkspacesView* view)
 }
 
 
+//khidki start
+void
+Desktop::K_AddWorkspacesView(K_WorkspacesView* view)
+{
+debug_printf("[Desktop] {K_AddWorkspacesView}");
+
+	if (view->K_Window() == NULL || view->K_Window()->IsHidden())
+		return;
+
+	BAutolock _(k_fWorkspacesLock);
+
+	if (!k_fWorkspacesViews.HasItem(view))
+		k_fWorkspacesViews.AddItem(view);
+}
+
+
+void
+Desktop::K_RemoveWorkspacesView(K_WorkspacesView* view)
+{
+	BAutolock _(k_fWorkspacesLock);
+	k_fWorkspacesViews.RemoveItem(view);
+}
+//end
+
+
 void
 Desktop::RemoveWorkspacesView(WorkspacesView* view)
 {
@@ -1120,6 +1730,34 @@ Desktop::SelectWindow(Window* window)
 	} else
 		ActivateWindow(window);
 }
+
+
+//khidki start
+/*!	\brief Activates or focusses the window based on the pointer position.
+*/
+void
+Desktop::K_SelectWindow(K_Window* window)
+{
+debug_printf("[Desktop] {K_SelectWindow} \n");
+
+	if (fSettings->ClickToFocusMouse()) {
+	#ifdef TESTING__BWindow
+	debug_printf("[Desktop]{SelectWindow}fSettings->ClickToFocusWindow\n");
+	#endif
+		// Only bring the window to front when it is not the window under the
+		// mouse pointer. This should result in sensible behaviour.
+		if (window != k_fWindowUnderMouse
+			|| (window == k_fWindowUnderMouse && window != K_FocusWindow()))
+			K_ActivateWindow(window);
+		else
+			K_SetFocusWindow(window);
+	} else
+		K_ActivateWindow(window);
+
+
+debug_printf("[Desktop] {K_SelectWindow} end\n");
+}
+//end
 
 
 /*!	\brief Tries to move the specified window to the front of the screen,
@@ -1255,6 +1893,172 @@ Desktop::ActivateWindow(Window* window)
 }
 
 
+//khidki start
+
+/*!	\brief Tries to move the specified window to the front of the screen,
+		and make it the focus window.
+
+	If there are any modal windows on this screen, it might not actually
+	become the frontmost window, though, as modal windows stay in front
+	of their subset.
+*/
+void
+Desktop::K_ActivateWindow(K_Window* window)
+{
+debug_printf("[Desktop] {K_ActivateWindow}\n");
+
+	STRACE(("ActivateWindow(%p, %s)\n", window, window
+		? window->Title() : "<none>"));
+
+	if (window == NULL) {
+		k_fBack = NULL;
+		k_fFront = NULL;
+		return;
+	}
+	if (window->Workspaces() == 0 && window->IsNormal())
+		return;
+
+	AutoWriteLocker allWindowLocker(fWindowLock);
+
+debug_printf("[Desktop] {K_ActivateWindow} before K_NotifyWindowActivated\n");
+	K_NotifyWindowActivated(window);
+debug_printf("[Desktop] {K_ActivateWindow} after K_NotifyWindowActivated\n");
+
+	bool windowOnOtherWorkspace = !window->InWorkspace(fCurrentWorkspace);
+debug_printf("[Desktop] {K_ActivateWindow} windowOnotherWorkspace =%d\n",windowOnOtherWorkspace);
+
+
+	if (windowOnOtherWorkspace
+		&& (window->Flags() & B_NOT_ANCHORED_ON_ACTIVATE) == 0) {
+debug_printf("[Desktop] {K_ActivateWindow} in windowOnOtherWorkspace && (window->Flags() & B_NOT_ANCHORED_ON_ACTIVATE) == 0 \n");
+
+		if ((window->Flags() & B_NO_WORKSPACE_ACTIVATION) == 0) {
+			// Switch to the workspace on which this window is
+			// (we'll take the first one that the window is on)
+
+debug_printf("[Desktop] {K_ActivateWindow} window->Flags() & B_NO_WORKSPACE_ACTIVATION) == 0 \n");
+
+			uint32 workspaces = window->Workspaces();
+			debug_printf("[Desktop] {K_ActivateWindow} workspaces =%d\n",workspaces);
+			for (int32 i = 0; i < fSettings->WorkspacesCount(); i++) {
+				uint32 workspace = workspace_to_workspaces(i);
+				if (workspaces & workspace) {
+					SetWorkspace(i);
+					windowOnOtherWorkspace = false;
+					break;
+				}
+			}
+		} else
+			return;
+	}
+
+	if (windowOnOtherWorkspace) {
+
+	debug_printf("[Desktop] {K_ActivateWindow} if statement windowOnotherWorkspace \n");
+
+		if (!window->IsNormal()) {
+			debug_printf("[Desktop] {K_ActivatedWindow} !window->IsNormal() \n");
+			// Bring a window to front that this floating window belongs to
+			K_Window* front = K__LastFocusSubsetWindow(window);
+			if (front == NULL) {
+				// We can't do anything about those.
+				return;
+			}
+
+			K_ActivateWindow(front);
+
+			if (!window->InWorkspace(fCurrentWorkspace)) {
+				// This window can't be made active
+				return;
+			}
+		} else {
+			debug_printf("[Desktop] {K_ActivateWindow} else statement of !window->IsNormal() \n");
+			// Bring the window to the current workspace
+			// TODO: what if this window is on multiple workspaces?!?
+			uint32 workspaces = workspace_to_workspaces(fCurrentWorkspace);
+			K_SetWindowWorkspaces(window, workspaces);
+		}
+	}
+
+	if (window->IsMinimized()) {
+		debug_printf("[Desktop] {K_ActivateWindow} window->IsMinimized() \n");
+		// Unlike WindowAction(), this is called from the application itself,
+		// so we will just unminimize the window here.
+		window->SetMinimized(false);
+		K_ShowWindow(window);
+	}
+
+	if (window == K_FrontWindow()) {
+	debug_printf("[Desktop] {K_ActivateWindow} window == K_FrontWindow\n");
+		// see if there is a normal B_AVOID_FRONT window still in front of us
+		K_Window* avoidsFront = window->NextWindow(fCurrentWorkspace);
+		while (avoidsFront && avoidsFront->IsNormal()
+			&& (avoidsFront->Flags() & B_AVOID_FRONT) == 0) {
+			avoidsFront = avoidsFront->NextWindow(fCurrentWorkspace);
+		}
+
+		if (avoidsFront == NULL) {
+			debug_printf("[Desktop] {K_ActivateWindow} avoidsFront == NULL\n");
+			// we're already the frontmost window, we might just not have focus
+			// yet
+			if ((window->Flags() & B_AVOID_FOCUS) == 0)
+				K_SetFocusWindow(window);
+			return;
+		}
+	}
+
+debug_printf("[Desktop] {K_ActivateWindow} before k_kWorkingList\n");
+	K_WindowList windows(k_kWorkingList);
+debug_printf("[Desktop] {K_ActivatedWindow} K_WindowList Count=%d\n",windows.Count());
+debug_printf("[Desktop] {K_ActivateWindow} after k_kWorkingList\n");
+	K_Window* frontmost = window->Frontmost();
+	const K_Window* lastWindowUnderMouse = k_fWindowUnderMouse;
+
+	K_CurrentWindows().RemoveWindow(window);
+	windows.AddWindow(window);
+	window->MoveToTopStackLayer();
+
+	if (frontmost != NULL && frontmost->IsModal()) {
+		// all modal windows follow their subsets to the front
+		// (ie. they are staying in front of them, but they are
+		// not supposed to change their order because of that)
+
+		K_Window* nextModal;
+		for (K_Window* modal = frontmost; modal != NULL; modal = nextModal) {
+			// get the next modal window
+			nextModal = modal->NextWindow(fCurrentWorkspace);
+			while (nextModal != NULL && !nextModal->IsModal()) {
+				nextModal = nextModal->NextWindow(fCurrentWorkspace);
+			}
+			if (nextModal != NULL && !nextModal->HasInSubset(window))
+				nextModal = NULL;
+
+			K_CurrentWindows().RemoveWindow(modal);
+			windows.AddWindow(modal);
+		}
+	}
+
+	K__BringWindowsToFront(windows, k_kWorkingList, true);
+
+	if ((window->Flags() & B_AVOID_FOCUS) == 0)
+	{
+	debug_printf("[Desktop] {K_ActivateWindow} (window->Flags() & B_AVOID_FOCUS) == 0 \n");
+	
+		K_SetFocusWindow(window);
+	}
+
+	bool sendFakeMouseMoved = K__CheckSendFakeMouseMoved(lastWindowUnderMouse);
+
+	allWindowLocker.Unlock();
+
+	if (sendFakeMouseMoved)
+		K__SendFakeMouseMoved();
+
+debug_printf("[Desktop] {K_ActivateWindow}ends\n");
+}
+//end
+
+
 void
 Desktop::SendWindowBehind(Window* window, Window* behindOf, bool sendStack)
 {
@@ -1328,6 +2132,83 @@ Desktop::SendWindowBehind(Window* window, Window* behindOf, bool sendStack)
 }
 
 
+//khidki start
+void
+Desktop::K_SendWindowBehind(K_Window* window, K_Window* behindOf, bool sendStack)
+{
+debug_printf("[Desktop]{K_SendWindowBehind}\n");
+
+	if (!LockAllWindows())
+		return;
+
+	K_Window* orgWindow = window;
+	K_WindowStack* stack = window->GetWindowStack();
+	if (sendStack && stack != NULL)
+		window = stack->TopLayerWindow();
+
+	// TODO: should the "not in current workspace" be handled anyway?
+	//	(the code below would have to be changed then, though)
+	if (window == K_BackWindow()
+		|| !window->InWorkspace(fCurrentWorkspace)
+		|| (behindOf != NULL && !behindOf->InWorkspace(fCurrentWorkspace))) {
+		UnlockAllWindows();
+		return;
+	}
+
+	// Is this a valid behindOf window?
+	if (behindOf != NULL && window->HasInSubset(behindOf))
+		behindOf = NULL;
+
+	// what is currently visible of the window
+	// might be dirty after the window is send to back
+	BRegion dirty(window->VisibleRegion());
+
+	K_Window* backmost = window->Backmost(behindOf);
+	const K_Window* lastWindowUnderMouse = k_fWindowUnderMouse;
+
+	K_CurrentWindows().RemoveWindow(window);
+	K_CurrentWindows().AddWindow(window, backmost
+		? backmost->NextWindow(fCurrentWorkspace) : K_BackWindow());
+
+	BRegion dummy;
+	K__RebuildClippingForAllWindows(dummy);
+
+	// only redraw the top layer window to avoid flicker
+	if (sendStack) {
+		// mark everything dirty that is no longer visible
+		BRegion clean(window->VisibleRegion());
+		dirty.Exclude(&clean);
+		K_MarkDirty(dirty);
+	}
+
+	K__UpdateFronts();
+	if (fSettings->FocusFollowsMouse())
+		K_SetFocusWindow(K_WindowAt(fLastMousePosition));
+	else if (fSettings->NormalMouse())
+		K_SetFocusWindow(NULL);
+
+	K__WindowChanged(window);
+
+	if (sendStack && stack != NULL) {
+		for (int32 i = 0; i < stack->CountWindows(); i++) {
+			K_Window* stackWindow = stack->LayerOrder().ItemAt(i);
+			if (stackWindow == window)
+				continue;
+			K_SendWindowBehind(stackWindow, behindOf, false);
+		}
+	}
+
+	bool sendFakeMouseMoved = K__CheckSendFakeMouseMoved(lastWindowUnderMouse);
+	K_NotifyWindowSentBehind(orgWindow, behindOf);
+
+	UnlockAllWindows();
+
+	if (sendFakeMouseMoved)
+		K__SendFakeMouseMoved();
+}
+//end
+
+
 void
 Desktop::ShowWindow(Window* window)
 {
@@ -1365,6 +2246,52 @@ Desktop::ShowWindow(Window* window)
 
 	_SendFakeMouseMoved(window);
 }
+
+
+//khidki start
+void
+Desktop::K_ShowWindow(K_Window* window)
+{
+debug_printf("[Desktop] {K_ShowWindow} \n");
+	if (!window->IsHidden())
+		return;
+
+	AutoWriteLocker locker(fWindowLock);
+
+	window->SetHidden(false);
+	k_fFocusList.AddWindow(window);//the window which is on focus
+
+	// If the window is on the current workspace, we'll show it. Special
+	// handling for floating windows, as they can only be shown if their
+	// subset is.
+	if (window->InWorkspace(fCurrentWorkspace)
+		|| (window->IsFloating() && K__LastFocusSubsetWindow(window) != NULL)) {
+		debug_printf("[Desktop] {K_ShowWindow} window is in current workspace. \n");
+		K__ShowWindow(window, true);
+		K__UpdateSubsetWorkspaces(window);
+		K_ActivateWindow(window);
+	} else {
+		// then we don't need to send the fake mouse event either
+		K__WindowChanged(window);
+		return;
+	}
+
+	if (window->HasWorkspacesViews()) {
+	debug_printf("[Desktop] {K_ShowWindow} window->HasWorkspacesViews()\n");
+		// find workspaces views in view hierarchy
+		BAutolock _(fWorkspacesLock);
+		window->FindWorkspacesViews(k_fWorkspacesViews);
+	}
+
+	// If the mouse cursor is directly over the newly visible window,
+	// we'll send a fake mouse moved message to the window, so that
+	// it knows the mouse is over it.
+
+	K__SendFakeMouseMoved(window);
+
+debug_printf("[Desktop] {K_ShowWindow} ends\n");
+}
+//end
 
 
 void
@@ -1426,6 +2353,80 @@ Desktop::HideWindow(Window* window, bool fromMinimize)
 }
 
 
+//khidki start
+void
+Desktop::K_HideWindow(K_Window* window, bool fromMinimize)
+{
+debug_printf("[Desktop] {K_HideWindow} \n");
+
+	if (window->IsHidden())
+		return;
+
+	if (!LockAllWindows())
+		return;
+
+	window->SetHidden(true);
+	k_fFocusList.RemoveWindow(window);
+
+	if (k_fMouseEventWindow == window) {
+	debug_printf("[Desktop] {K_HideWindow} k_fMouseEventWindow == window\n");
+		// Make its decorator lose the current mouse action
+		BMessage message;
+		int32 viewToken;
+		window->MouseUp(&message, fLastMousePosition, &viewToken);
+
+		k_fMouseEventWindow = NULL;
+	}
+
+	if (k_fLockedFocusWindow == window) {
+	debug_printf("[Desktop] {K_HideWindow} k_fLockedFocusWindow == window\n");
+		// Remove the focus lock so the focus can be changed below
+		k_fLockedFocusWindow = NULL;
+	}
+
+	if (window->InWorkspace(fCurrentWorkspace)) {
+	debug_printf("[Desktop] {K_HideWindow} window->InWorkspace(fCurrentWorkspace)\n");
+		K__UpdateSubsetWorkspaces(window);
+		K__HideWindow(window);
+		K__UpdateFronts();
+	} else
+		K__WindowChanged(window);
+
+	if (K_FocusWindow() == window){
+	debug_printf("[Desktop] {K_HideWindow} K_FocusWindow() == window\n");
+		K_SetFocusWindow();
+	}
+
+	K__WindowRemoved(window);
+
+	if (window->HasWorkspacesViews()) {
+	debug_printf("[Desktop] {K_HideWindow} window->HasWorkspacesViews()\n");
+		// remove workspaces views from this window
+		BObjectList<K_WorkspacesView> list(false);
+		window->FindWorkspacesViews(list);
+
+		BAutolock _(fWorkspacesLock);// tododo
+
+		while (K_WorkspacesView* view = list.RemoveItemAt(0)) {
+		debug_printf("[Desktop] {K_HideWindow} K_WorkspacesView loop\n");
+			k_fWorkspacesViews.RemoveItem(view);
+		}
+	}
+
+	K_NotifyWindowHidden(window, fromMinimize);
+
+	UnlockAllWindows();
+
+	if (window == k_fWindowUnderMouse){
+	debug_printf("[Desktop] {K_HideWindow} window == k_fWindowUnderMouse\n");
+		K__SendFakeMouseMoved();
+	}
+
+debug_printf("[Desktop] {K_HideWindow} end\n");
+}
+//end
+
+
 void
 Desktop::MinimizeWindow(Window* window, bool minimize)
 {
@@ -1444,6 +2445,32 @@ Desktop::MinimizeWindow(Window* window, bool minimize)
 
 	UnlockAllWindows();
 }
+
+
+//khidki start
+void
+Desktop::K_MinimizeWindow(K_Window* window, bool minimize)
+{
+debug_printf("[Desktop]{K_MinimizedWindow}\n");
+
+	if (!LockAllWindows())
+		return;
+
+	if (minimize && !window->IsHidden()) {
+		K_HideWindow(window, true);
+		window->SetMinimized(minimize);
+		K_NotifyWindowMinimized(window, minimize);
+	} else if (!minimize && window->IsHidden()) {
+		K_ActivateWindow(window);
+			// this will unminimize the window for us
+		K_NotifyWindowMinimized(window, minimize);
+	}
+
+	UnlockAllWindows();
+
+debug_printf("[Desktop]{K_MinimizedWindow} end\n");
+}
+//end
 
 
 void
@@ -1540,6 +2567,107 @@ Desktop::MoveWindowBy(Window* window, float x, float y, int32 workspace)
 }
 
 
+//khidki start
+void
+Desktop::K_MoveWindowBy(K_Window* window, float x, float y, int32 workspace)
+{
+debug_printf("[Desktop]{K_MoveWindowBy}\n");
+
+	if (x == 0 && y == 0)
+		return;
+
+	AutoWriteLocker _(fWindowLock);
+
+	K_Window* topWindow = window->TopLayerStackWindow();
+	if (topWindow != NULL)
+		window = topWindow;
+
+	if (workspace == -1)
+		workspace = fCurrentWorkspace;
+	if (!window->IsVisible() || workspace != fCurrentWorkspace) {
+		if (workspace != fCurrentWorkspace) {
+			K_WindowStack* stack = window->GetWindowStack();
+			if (stack != NULL) {
+			debug_printf("[Desktop]{K_MoveWindowBy}\n");
+				for (int32 s = 0; s < stack->CountWindows(); s++) {
+					K_Window* stackWindow = stack->WindowAt(s);
+					// move the window on another workspace - this doesn't
+					// change it's current position
+					if (stackWindow->Anchor(workspace).position
+						== kInvalidWindowPosition) {
+						stackWindow->Anchor(workspace).position
+							= stackWindow->Frame().LeftTop();
+					}
+
+					stackWindow->Anchor(workspace).position += BPoint(x, y);
+					stackWindow->SetCurrentWorkspace(workspace);
+					K__WindowChanged(stackWindow);
+				}
+			}
+		} else
+			window->MoveBy((int32)x, (int32)y);
+
+		K_NotifyWindowMoved(window);
+		return;
+	}
+
+	// the dirty region starts with the visible area of the window being moved
+	BRegion newDirtyRegion(window->VisibleRegion());
+
+	// stop direct frame buffer access
+	bool direct = false;
+	if (window->KServerWindow()->IsDirectlyAccessing()) {
+		window->KServerWindow()->HandleDirectConnection(B_DIRECT_STOP);
+		direct = true;
+	}
+
+	window->MoveBy((int32)x, (int32)y);
+
+	BRegion background;
+	K__RebuildClippingForAllWindows(background);
+
+	// construct the region that is possible to be blitted
+	// to move the contents of the window
+	BRegion copyRegion(window->VisibleRegion());
+	copyRegion.OffsetBy((int32)-x, (int32)-y);
+	copyRegion.IntersectWith(&newDirtyRegion);
+		// newDirtyRegion == the windows old visible region
+
+	// include the the new visible region of the window being
+	// moved into the dirty region (for now)
+	newDirtyRegion.Include(&window->VisibleRegion());
+
+	// NOTE: Having all windows locked should prevent any
+	// problems with locking the drawing engine here.
+	if (GetDrawingEngine()->LockParallelAccess()) {
+		GetDrawingEngine()->CopyRegion(&copyRegion, (int32)x, (int32)y);
+		GetDrawingEngine()->UnlockParallelAccess();
+	}
+
+	// in the dirty region, exclude the parts that we
+	// could move by blitting
+	copyRegion.OffsetBy((int32)x, (int32)y);
+	newDirtyRegion.Exclude(&copyRegion);
+
+	K_MarkDirty(newDirtyRegion);
+	_SetBackground(background);
+	K__WindowChanged(window);
+
+	// resume direct frame buffer access
+	if (direct) {
+		// TODO: the clipping actually only changes when we move our window
+		// off screen, or behind some other window
+		window->KServerWindow()->HandleDirectConnection(
+			B_DIRECT_START | B_BUFFER_MOVED | B_CLIPPING_MODIFIED);
+	}
+
+	K_NotifyWindowMoved(window);
+
+debug_printf("[Desktop]{K_MoveWindowBy}end\n");
+}
+//end
+
+
 void
 Desktop::ResizeWindowBy(Window* window, float x, float y)
 {
@@ -1600,6 +2728,73 @@ Desktop::ResizeWindowBy(Window* window, float x, float y)
 }
 
 
+//khidki start
+void
+Desktop::K_ResizeWindowBy(K_Window* window, float x, float y)
+{
+debug_printf("[Desktop]{K_ResizeeWindowBy}\n");
+debug_printf("[Desktop]{K_ResizeeWindowBy}x=%f,y=%f\n",x,y);
+
+	if (x == 0 && y == 0)
+		return;
+
+	AutoWriteLocker _(fWindowLock);
+
+	K_Window* topWindow = window->TopLayerStackWindow();
+	if (topWindow)
+		window = topWindow;
+
+	if (!window->IsVisible()) {
+		window->ResizeBy((int32)x, (int32)y, NULL);
+		K_NotifyWindowResized(window);
+		return;
+	}
+
+	// the dirty region for the inside of the window is
+	// constructed by the window itself in ResizeBy()
+	BRegion newDirtyRegion;
+	// track the dirty region outside the window in case
+	// it is shrunk in "previouslyOccupiedRegion"
+	BRegion previouslyOccupiedRegion(window->VisibleRegion());
+
+	// stop direct frame buffer access
+	bool direct = false;
+	if (window->KServerWindow()->IsDirectlyAccessing()) {
+		window->KServerWindow()->HandleDirectConnection(B_DIRECT_STOP);
+		direct = true;
+	}
+
+	window->ResizeBy((int32)x, (int32)y, &newDirtyRegion);
+
+	BRegion background;
+	K__RebuildClippingForAllWindows(background);
+
+	// we just care for the region outside the window
+	previouslyOccupiedRegion.Exclude(&window->VisibleRegion());
+
+	// make sure the window cannot mark stuff dirty outside
+	// its visible region...
+	newDirtyRegion.IntersectWith(&window->VisibleRegion());
+	// ...because we do this ourselves
+	newDirtyRegion.Include(&previouslyOccupiedRegion);
+
+	K_MarkDirty(newDirtyRegion);
+	_SetBackground(background);
+	K__WindowChanged(window);
+
+	// resume direct frame buffer access
+	if (direct) {
+		window->KServerWindow()->HandleDirectConnection(
+			B_DIRECT_START | B_BUFFER_RESIZED | B_CLIPPING_MODIFIED);
+	}
+
+	K_NotifyWindowResized(window);
+
+debug_printf("[Desktop]{K_ResizeeWindowBy}end\n");
+}
+//end
+
+
 void
 Desktop::SetWindowOutlinesDelta(Window* window, BPoint delta)
 {
@@ -1650,6 +2845,63 @@ Desktop::SetWindowDecoratorSettings(Window* window, const BMessage& settings)
 }
 
 
+//khidki start
+void
+Desktop::K_SetWindowOutlinesDelta(K_Window* window, BPoint delta)
+{
+debug_printf("[Desktop] {K_SetWindowOutlinesDelta} \n");
+	AutoWriteLocker _(fWindowLock);
+
+	if (!window->IsVisible())
+		return;
+
+	BRegion newDirtyRegion;
+	window->SetOutlinesDelta(delta, &newDirtyRegion);
+
+	BRegion background;
+	K__RebuildClippingForAllWindows(background);
+
+	K_MarkDirty(newDirtyRegion);
+	_SetBackground(background);
+}
+
+
+bool
+Desktop::K_SetWindowTabLocation(K_Window* window, float location, bool isShifting)
+{
+debug_printf("[Desktop] {K_SetWindowTabLocation} \n");
+
+	AutoWriteLocker _(fWindowLock);
+
+	BRegion dirty;
+	bool changed = window->SetTabLocation(location, isShifting, dirty);
+	if (changed)
+		K_RebuildAndRedrawAfterWindowChange(window, dirty);
+
+	K_NotifyWindowTabLocationChanged(window, location, isShifting);
+
+	return changed;
+}
+
+
+bool
+Desktop::K_SetWindowDecoratorSettings(K_Window* window, const BMessage& settings)
+{
+debug_printf("[Desktop] {K_SetWindowDecoratorSettings} \n");
+
+	AutoWriteLocker _(fWindowLock);
+
+	BRegion dirty;
+	bool changed = window->SetDecoratorSettings(settings, dirty);
+	bool listenerChanged = K_SetDecoratorSettings(window, settings);
+	if (changed || listenerChanged)
+		K_RebuildAndRedrawAfterWindowChange(window, dirty);
+
+	return changed;
+}
+//end
+
+
 void
 Desktop::SetWindowWorkspaces(Window* window, uint32 workspaces)
 {
@@ -1670,6 +2922,34 @@ Desktop::SetWindowWorkspaces(Window* window, uint32 workspaces)
 	}
 	UnlockAllWindows();
 }
+
+
+//khidki start
+void
+Desktop::K_SetWindowWorkspaces(K_Window* window, uint32 workspaces)
+{
+debug_printf("[Desktop] {K_SetWindowWorkspaces} \n");
+
+	LockAllWindows();
+
+	if (window->IsNormal() && workspaces == B_CURRENT_WORKSPACE)
+		workspaces = workspace_to_workspaces(CurrentWorkspace());
+
+	K_WindowStack* stack = window->GetWindowStack();
+	if (stack != NULL) {
+		for (int32 s = 0; s < stack->CountWindows(); s++) {
+			window = stack->LayerOrder().ItemAt(s);
+
+			uint32 oldWorkspaces = window->Workspaces();
+			window->WorkspacesChanged(oldWorkspaces, workspaces);
+			K__ChangeWindowWorkspaces(window, oldWorkspaces, workspaces);
+		}
+	}
+	UnlockAllWindows();
+
+debug_printf("[Desktop] {K_SetWindowWorkspaces} ended\n");
+}
+//end
 
 
 /*!	\brief Adds the window to the desktop.
@@ -1701,6 +2981,48 @@ Desktop::AddWindow(Window *window)
 }
 
 
+//khidki start
+/*!	\brief Adds the window to the desktop.
+	At this point, the window is still hidden and must be shown explicitly
+	via ShowWindow().
+*/
+void
+Desktop::K_AddWindow(K_Window *window)
+{
+debug_printf("[Desktop] {K_AddWindow} \n");
+
+	LockAllWindows();
+
+	k_fAllWindows.AddWindow(window);//here window is added in list
+	if (!window->IsNormal())
+	{
+	debug_printf("[Desktop] {K_AddWindow}!window->IsNormal()\n");
+		k_fSubsetWindows.AddWindow(window);
+	}
+
+	if (window->IsNormal()) {
+	debug_printf("[Desktop] {K_AddWindow} window->IsNormal()\n");
+		if (window->Workspaces() == B_CURRENT_WORKSPACE)
+		{
+		debug_printf("[Desktop] {K_AddWindow} window->Workspaces()==B_CURRENT_WORKSPACE\n");
+			window->SetWorkspaces(workspace_to_workspaces(CurrentWorkspace()));
+		}
+	} else {
+		debug_printf("[Desktop] {K_AddWindow} else part of window->IsNormal()\n");
+		// subset windows are visible on all workspaces their subset is on
+		window->SetWorkspaces(window->SubsetWorkspaces());
+	}
+
+	K__ChangeWindowWorkspaces(window, 0, window->Workspaces());
+
+	K_NotifyWindowAdded(window);
+
+	UnlockAllWindows();
+debug_printf("[Desktop] {K_AddWindow}ended\n");
+}
+//end
+
+
 void
 Desktop::RemoveWindow(Window *window)
 {
@@ -1725,6 +3047,39 @@ Desktop::RemoveWindow(Window *window)
 }
 
 
+//khidki start
+void
+Desktop::K_RemoveWindow(K_Window *window)
+{
+debug_printf("[Desktop]{K_RemoveWindow}\n");
+
+	LockAllWindows();
+
+	if (!window->IsHidden())
+	{//if window is not hidden then Hide it.
+		K_HideWindow(window);
+	}
+
+	k_fAllWindows.RemoveWindow(window);
+	if (!window->IsNormal())
+		k_fSubsetWindows.RemoveWindow(window);
+
+	K__ChangeWindowWorkspaces(window, window->Workspaces(), 0);
+
+	K_NotifyWindowRemoved(window);
+
+	UnlockAllWindows();
+
+	// make sure this window won't get any events anymore
+
+	EventDispatcher().RemoveTarget(window->EventTarget());
+
+
+debug_printf("[Desktop]{K_RemoveWindow} end\n");
+}
+//khidki end
+
+
 bool
 Desktop::AddWindowToSubset(Window* subset, Window* window)
 {
@@ -1746,6 +3101,29 @@ Desktop::RemoveWindowFromSubset(Window* subset, Window* window)
 }
 
 
+//khidki start
+bool
+Desktop::K_AddWindowToSubset(K_Window* subset, K_Window* window)
+{
+	if (!subset->AddToSubset(window))
+		return false;
+
+	K__ChangeWindowWorkspaces(subset, subset->Workspaces(),
+		subset->SubsetWorkspaces());
+	return true;
+}
+
+
+void
+Desktop::K_RemoveWindowFromSubset(K_Window* subset, K_Window* window)
+{
+	subset->RemoveFromSubset(window);
+	K__ChangeWindowWorkspaces(subset, subset->Workspaces(),
+		subset->SubsetWorkspaces());
+}
+//end
+
+
 void
 Desktop::FontsChanged(Window* window)
 {
@@ -1756,6 +3134,23 @@ Desktop::FontsChanged(Window* window)
 
 	RebuildAndRedrawAfterWindowChange(window, dirty);
 }
+
+
+//khidki start
+void
+Desktop::K_FontsChanged(K_Window* window)
+{
+debug_printf("[Desktop]{K_FontsChanged}\n");
+	AutoWriteLocker _(fWindowLock);
+
+	BRegion dirty;
+	window->FontsChanged(&dirty);
+
+	K_RebuildAndRedrawAfterWindowChange(window, dirty);
+
+debug_printf("[Desktop]{K_FontsChanged}end\n");
+}
+//end
 
 
 void
@@ -1783,6 +3178,37 @@ Desktop::ColorUpdated(Window* window, color_which which, rgb_color color)
 }
 
 
+//khidki start
+void
+Desktop::K_ColorUpdated(K_Window* window, color_which which, rgb_color color)
+{
+debug_printf("[Desktop]{K_ColorUpdated}\n");
+
+	AutoWriteLocker _(fWindowLock);
+
+	window->TopView()->ColorUpdated(which, color);
+
+	switch (which) {
+		case B_WINDOW_TAB_COLOR:
+		case B_WINDOW_TEXT_COLOR:
+		case B_WINDOW_INACTIVE_TAB_COLOR:
+		case B_WINDOW_INACTIVE_TEXT_COLOR:
+		case B_WINDOW_BORDER_COLOR:
+		case B_WINDOW_INACTIVE_BORDER_COLOR:
+			break;
+		default:
+			return;
+	}
+
+	BRegion dirty;
+	window->ColorsChanged(&dirty);
+	K_RebuildAndRedrawAfterWindowChange(window, dirty);
+
+debug_printf("[Desktop]{K_ColorUpdated}end\n");
+}
+//end
+
+
 void
 Desktop::SetWindowLook(Window* window, window_look newLook)
 {
@@ -1800,6 +3226,30 @@ Desktop::SetWindowLook(Window* window, window_look newLook)
 
 	NotifyWindowLookChanged(window, newLook);
 }
+
+
+//khidki start
+void
+Desktop::K_SetWindowLook(K_Window* window, window_look newLook)
+{
+debug_printf("[Desktop]{K_SetWindowLook}\n");
+	if (window->Look() == newLook)
+		return;
+
+	AutoWriteLocker _(fWindowLock);
+
+	BRegion dirty;
+	window->SetLook(newLook, &dirty);
+		// TODO: test what happens when the window
+		// finds out it needs to resize itself...
+
+	K_RebuildAndRedrawAfterWindowChange(window, dirty);
+
+	K_NotifyWindowLookChanged(window, newLook);
+
+debug_printf("[Desktop]{K_SetWindowLook}end\n");
+}
+//end
 
 
 void
@@ -1905,6 +3355,115 @@ Desktop::SetWindowFeel(Window* window, window_feel newFeel)
 }
 
 
+//khidki start
+void
+Desktop::K_SetWindowFeel(K_Window* window, window_feel newFeel)
+{
+debug_printf("[Desktop]{K_SetWindowFeel}\n");
+
+	if (window->Feel() == newFeel)
+		return;
+
+	LockAllWindows();
+
+	bool wasNormal = window->IsNormal();
+
+	window->SetFeel(newFeel);
+
+	// move the window out of or into the subset window list as needed
+	if (window->IsNormal() && !wasNormal)
+		k_fSubsetWindows.RemoveWindow(window);
+	else if (!window->IsNormal() && wasNormal)
+		k_fSubsetWindows.AddWindow(window);
+
+	// A normal window that was once a floating or modal window will
+	// adopt the window's current workspaces
+
+	if (!window->IsNormal()) {
+		K__ChangeWindowWorkspaces(window, window->Workspaces(),
+			window->SubsetWorkspaces());
+	}
+
+	// make sure the window has the correct position in the window lists
+	// (ie. all floating windows have to be on the top, ...)
+
+	for (int32 i = 0; i < kMaxWorkspaces; i++) {
+		if (!workspace_in_workspaces(i, window->Workspaces()))
+			continue;
+
+		bool changed = false;
+		BRegion visibleBefore;
+		if (i == fCurrentWorkspace && window->IsVisible())
+			visibleBefore = window->VisibleRegion();
+
+		K_Window* backmost = window->Backmost(K__Windows(i).LastWindow(), i);
+		if (backmost != NULL) {
+			// check if the backmost window is really behind it
+			K_Window* previous = window->PreviousWindow(i);
+			while (previous != NULL) {
+				if (previous == backmost)
+					break;
+
+				previous = previous->PreviousWindow(i);
+			}
+
+			if (previous == NULL) {
+				// need to reinsert window before its backmost window
+				K__Windows(i).RemoveWindow(window);
+				K__Windows(i).AddWindow(window, backmost->NextWindow(i));
+				changed = true;
+			}
+		}
+
+		K_Window* frontmost = window->Frontmost(K__Windows(i).FirstWindow(), i);
+		if (frontmost != NULL) {
+			// check if the frontmost window is really in front of it
+			K_Window* next = window->NextWindow(i);
+			while (next != NULL) {
+				if (next == frontmost)
+					break;
+
+				next = next->NextWindow(i);
+			}
+
+			if (next == NULL) {
+				// need to reinsert window behind its frontmost window
+				K__Windows(i).RemoveWindow(window);
+				K__Windows(i).AddWindow(window, frontmost);
+				changed = true;
+			}
+		}
+
+		if (i == fCurrentWorkspace && changed) {
+			BRegion dummy;
+			K__RebuildClippingForAllWindows(dummy);
+
+			// mark everything dirty that is no longer visible, or
+			// is now visible and wasn't before
+			BRegion visibleAfter(window->VisibleRegion());
+			BRegion dirty(visibleAfter);
+			dirty.Exclude(&visibleBefore);
+			visibleBefore.Exclude(&visibleAfter);
+			dirty.Include(&visibleBefore);
+
+			K_MarkDirty(dirty);
+		}
+	}
+
+	K__UpdateFronts();
+
+	if (window == K_FocusWindow() && !window->IsVisible())
+		K_SetFocusWindow();
+
+	K_NotifyWindowFeelChanged(window, newFeel);
+
+	UnlockAllWindows();
+
+debug_printf("[Desktop]{K_SetWindowFeel} end\n");
+}
+//end
+
+
 void
 Desktop::SetWindowFlags(Window *window, uint32 newFlags)
 {
@@ -1922,6 +3481,28 @@ Desktop::SetWindowFlags(Window *window, uint32 newFlags)
 }
 
 
+//khidki start
+void
+Desktop::K_SetWindowFlags(K_Window *window, uint32 newFlags)
+{
+debug_printf("[Desktop]{K_SetWindowFlags}\n");
+	if (window->Flags() == newFlags)
+		return;
+
+	AutoWriteLocker _(fWindowLock);
+
+	BRegion dirty;
+	window->SetFlags(newFlags, &dirty);
+		// TODO: test what happens when the window
+		// finds out it needs to resize itself...
+
+	K_RebuildAndRedrawAfterWindowChange(window, dirty);
+
+debug_printf("[Desktop]{K_SetWindowFlags}ends\n");
+}
+//end
+
+
 void
 Desktop::SetWindowTitle(Window *window, const char* title)
 {
@@ -1932,6 +3513,23 @@ Desktop::SetWindowTitle(Window *window, const char* title)
 
 	RebuildAndRedrawAfterWindowChange(window, dirty);
 }
+
+
+//khidki start
+void
+Desktop::K_SetWindowTitle(K_Window *window, const char* title)
+{
+debug_printf("[Desktop]{K_SetWindowTitle}\n");
+	AutoWriteLocker _(fWindowLock);
+
+	BRegion dirty;
+	window->SetTitle(title, dirty);
+
+	K_RebuildAndRedrawAfterWindowChange(window, dirty);
+
+debug_printf("[Desktop]{K_SetWindowTitle}ends\n");
+}
+//end
 
 
 /*!	Returns the window under the mouse cursor.
@@ -1950,11 +3548,41 @@ Desktop::WindowAt(BPoint where)
 }
 
 
+//khidki start
+/*!	Returns the window under the mouse cursor.
+	You need to have acquired the All Windows lock when calling this method.
+*/
+K_Window*
+Desktop::K_WindowAt(BPoint where)
+{
+debug_printf("[Desktop]{K_WindowAt}\n");
+
+	for (K_Window* window = K_CurrentWindows().LastWindow(); window;
+			window = window->PreviousWindow(fCurrentWorkspace)) {
+		if (window->IsVisible() && window->VisibleRegion().Contains(where))
+			return window->StackedWindowAt(where);
+	}
+
+debug_printf("[Desktop]{K_WindowAt} about to return NULL\n");
+	return NULL;
+}
+//end
+
+
 void
 Desktop::SetMouseEventWindow(Window* window)
 {
 	fMouseEventWindow = window;
 }
+
+
+//khidki start
+void
+Desktop::K_SetMouseEventWindow(K_Window* window)
+{
+	k_fMouseEventWindow = window;
+}
+//end
 
 
 void
@@ -1965,6 +3593,22 @@ Desktop::SetViewUnderMouse(const Window* window, int32 viewToken)
 }
 
 
+//khidki start
+void
+Desktop::K_SetViewUnderMouse(const K_Window* window, int32 viewToken)
+{
+debug_printf("[Desktop]{K_SetViewUnderMouse}\n");
+
+	fWindowUnderMouse = NULL;//custom code
+
+	k_fWindowUnderMouse = window;
+	fViewUnderMouse = viewToken;
+
+debug_printf("[Desktop]{K_SetViewUnderMouse}ends\n");
+}
+//end
+
+
 int32
 Desktop::ViewUnderMouse(const Window* window)
 {
@@ -1973,6 +3617,21 @@ Desktop::ViewUnderMouse(const Window* window)
 
 	return B_NULL_TOKEN;
 }
+
+
+//khidki start
+int32
+Desktop::K_ViewUnderMouse(const K_Window* window)
+{
+debug_printf("[Desktop]{K_ViewUnderMouse}\n");
+
+	if (window != NULL && k_fWindowUnderMouse == window)
+		return fViewUnderMouse;
+
+debug_printf("[Desktop]{K_ViewUnderMouse}about to return null token\n");
+	return B_NULL_TOKEN;
+}
+//end
 
 
 /*!	Returns the current keyboard event target candidate - which is either the
@@ -1997,6 +3656,34 @@ Desktop::KeyboardEventTarget()
 
 	return NULL;
 }
+
+
+//khidki start
+/*!	Returns the current keyboard event target candidate - which is either the
+	top-most window (in case it has the kAcceptKeyboardFocusFlag flag set), or
+	the one having focus.
+	The window lock must be held when calling this function.
+*/
+EventTarget*
+Desktop::K_KeyboardEventTarget()
+{
+debug_printf("[Desktop]{K_KeyboardEventTarget}\n");
+
+	// Get the top most non-hidden window
+	K_Window* window = K_CurrentWindows().LastWindow();
+	while (window != NULL && window->IsHidden()) {
+		window = window->PreviousWindow(fCurrentWorkspace);
+	}
+
+	if (window != NULL && (window->Flags() & kAcceptKeyboardFocusFlag) != 0)
+		return &window->EventTarget();
+
+	if (K_FocusWindow() != NULL)
+		return &K_FocusWindow()->EventTarget();
+
+	return NULL;
+}
+//end
 
 
 /*!	Tries to set the focus to the specified \a focus window. It will make sure,
@@ -2079,6 +3766,17 @@ Desktop::SetFocusWindow(Window* nextFocus)
 
 	team_id oldActiveApp = -1;
 	team_id newActiveApp = -1;
+	
+//custom mak start
+if (k_fFocus != NULL) {
+		debug_printf("[Desktop] {SetFocusWindow} k_fFocus != NULL 1\n");
+		k_fFocus->SetFocus(false);
+		oldActiveApp = k_fFocus->KServerWindow()->App()->ClientTeam();
+
+
+	debug_printf("[Desktop] {SetFocusWindow} k_fFocus != NULL 1 end\n");
+	}
+//end
 
 	if (fFocus != NULL) {
 		fFocus->SetFocus(false);
@@ -2120,6 +3818,161 @@ Desktop::SetFocusWindow(Window* nextFocus)
 }
 
 
+//khidki start
+/*!	Tries to set the focus to the specified \a focus window. It will make sure,
+	however, that the window actually can have focus. You are allowed to pass
+	in a NULL pointer for \a focus.
+
+	Besides the B_AVOID_FOCUS flag, a modal window, or a BWindowScreen can both
+	prevent it from getting focus.
+
+	In any case, this method makes sure that there is a focus window, if there
+	is any window at all, that is.
+*/
+void
+Desktop::K_SetFocusWindow(K_Window* nextFocus)
+{
+debug_printf("[Desktop] {K_SetFocusWindow} \n");
+k_fFocus=NULL;
+	if (!LockAllWindows())
+		return;
+
+	// test for B_LOCK_WINDOW_FOCUS
+	if (k_fLockedFocusWindow && nextFocus != k_fLockedFocusWindow) {
+		UnlockAllWindows();
+		return;
+	}
+
+	bool hasModal = K__WindowHasModal(nextFocus);
+	bool hasWindowScreen = false;
+
+	if (!hasModal && nextFocus != NULL) {
+	debug_printf("[Desktop] {K_SetFocusWindow} !hasModal && nextFocus != NULL\n");
+		// Check whether or not a window screen is in front of the window
+		// (if it has a modal, the right thing is done, anyway)
+		K_Window* window = nextFocus;
+		while (true) {
+		debug_printf("[Desktop] {K_SetFocusWindow} while(true)\n");
+			window = window->NextWindow(fCurrentWorkspace);
+			if (window == NULL || window->Feel() == kWindowScreenFeel)
+				break;
+		}
+		if (window != NULL){
+		debug_printf("[Desktop] {K_SetFocusWindow} window != null\n");
+			hasWindowScreen = true;
+		}
+	}
+
+	if (nextFocus == k_fFocus && nextFocus != NULL && !nextFocus->IsHidden()
+		&& (nextFocus->Flags() & B_AVOID_FOCUS) == 0
+		&& !hasModal && !hasWindowScreen) {
+		debug_printf("[Desktop] {K_SetFocusWindow} before UnlockAllWindows()\n");
+		// the window that is supposed to get focus already has focus
+		UnlockAllWindows();
+		return;
+	}
+
+	uint32 listIndex = fCurrentWorkspace;
+	K_WindowList* list = &K__Windows(fCurrentWorkspace);
+	if (!fSettings->NormalMouse()) {
+		debug_printf("[Desktop] {K_SetFocusWindow} !fSettings->NormalMouse()\n");
+		listIndex = k_kFocusList;
+		list = &k_fFocusList;
+	}
+
+	if (nextFocus == NULL || hasModal || hasWindowScreen) {
+	debug_printf("[Desktop] {K_SetFocusWindow} nextFocus == NULL || hasModal || hasWindowScreen \n");
+
+		nextFocus = list->LastWindow();
+
+		if (fSettings->NormalMouse()) {
+			debug_printf("[Desktop] {K_SetFocusWindow} fSettings->NormalMouse() \n");
+			// If the last window having focus is a window that cannot make it
+			// to the front, we use that as the next focus
+			K_Window* lastFocus = k_fFocusList.LastWindow();
+			if (lastFocus != NULL && !lastFocus->SupportsFront()
+				&& K__WindowCanHaveFocus(lastFocus)) {
+				nextFocus = lastFocus;
+			}
+		}
+	}
+
+	// make sure no window is chosen that doesn't want focus or cannot have it
+	while (nextFocus != NULL && !K__WindowCanHaveFocus(nextFocus)) {
+	debug_printf("[Desktop] {K_SetFocusWindow} nextFocus != NULL && !K__WindowCanHaveFocus(nextFocus) \n");
+		nextFocus = nextFocus->PreviousWindow(listIndex);
+	}
+
+	if (k_fFocus == nextFocus) {
+		debug_printf("[Desktop] {K_SetFocusWindow} k_fFocus == nextFocus\n");
+		// turns out the window that is supposed to get focus now already has it
+		UnlockAllWindows();
+		return;
+	}
+
+	team_id oldActiveApp = -1;
+	team_id newActiveApp = -1;
+
+	if (k_fFocus != NULL) {
+		debug_printf("[Desktop] {K_SetFocusWindow} k_fFocus != NULL 1\n");
+		k_fFocus->SetFocus(false);
+		oldActiveApp = k_fFocus->KServerWindow()->App()->ClientTeam();
+
+
+	debug_printf("[Desktop] {K_SetFocusWindow} k_fFocus != NULL 1 end\n");
+	}
+//custom mak start
+if (fFocus != NULL) {
+		debug_printf("[Desktop] {K_SetFocusWindow} fFocus != NULL 1\n");
+		fFocus->SetFocus(false);
+		oldActiveApp = fFocus->ServerWindow()->App()->ClientTeam();
+
+fFocus = NULL;
+	debug_printf("[Desktop] {K_SetFocusWindow} fFocus != NULL 1 end\n");
+	}
+//end
+	k_fFocus = nextFocus;
+
+	if (k_fFocus != NULL) {
+	debug_printf("[Desktop] {K_SetFocusWindow} k_fFocus != NULL 2\n");
+		k_fFocus->SetFocus(true);
+		newActiveApp = k_fFocus->KServerWindow()->App()->ClientTeam();
+
+		// move current focus to the end of the focus list
+		k_fFocusList.RemoveWindow(k_fFocus);
+		k_fFocusList.AddWindow(k_fFocus);
+
+	debug_printf("[Desktop] {K_SetFocusWindow} k_fFocus != NULL 2 end\n");
+	}
+
+	if (newActiveApp == -1) {
+		// make sure the cursor is visible
+		HWInterface()->SetCursorVisible(true);
+	}
+
+	UnlockAllWindows();
+
+	// change the "active" app if appropriate
+	if (oldActiveApp == newActiveApp)
+		return;
+
+	BAutolock locker(fApplicationsLock);
+
+	for (int32 i = 0; i < fApplications.CountItems(); i++) {
+	debug_printf("[Desktop] {K_SetFocusWindow} loop\n");
+		ServerApp* app = fApplications.ItemAt(i);
+
+		if (oldActiveApp != -1 && app->ClientTeam() == oldActiveApp)
+			app->Activate(false);
+		else if (newActiveApp != -1 && app->ClientTeam() == newActiveApp)
+			app->Activate(true);
+	}
+
+debug_printf("[Desktop] {K_SetFocusWindow} end\n");
+}
+//end
+
+
 void
 Desktop::SetFocusLocked(const Window* window)
 {
@@ -2137,6 +3990,30 @@ Desktop::SetFocusLocked(const Window* window)
 }
 
 
+//khidki start
+void
+Desktop::K_SetFocusLocked(const K_Window* window)
+{
+debug_printf("[Desktop] {K_SetFocusLocked}\n");
+
+	AutoWriteLocker _(fWindowLock);
+
+	if (window != NULL) {
+	debug_printf("[Desktop] {K_SetFocusLocked}window != NULL\n");
+		// Don't allow this to be set when no mouse buttons
+		// are pressed. (BView::SetMouseEventMask() should only be called
+		// from mouse hooks.)
+		if (fLastMouseButtons == 0)
+			return;
+	}
+
+	k_fLockedFocusWindow = window;
+
+debug_printf("[Desktop] {K_SetFocusLocked}end\n");
+}
+//end
+
+
 Window*
 Desktop::FindWindowByClientToken(int32 token, team_id teamID)
 {
@@ -2152,6 +4029,25 @@ Desktop::FindWindowByClientToken(int32 token, team_id teamID)
 }
 
 
+//khidki start
+K_Window*
+Desktop::K_FindWindowByClientToken(int32 token, team_id teamID)
+{
+debug_printf("[Desktop]{K_FindWindowByClientToken}\n");
+
+	for (K_Window *window = k_fAllWindows.FirstWindow(); window != NULL;
+			window = window->NextWindow(k_kAllWindowList)) {
+		if (window->KServerWindow()->ClientToken() == token
+			&& window->KServerWindow()->ClientTeam() == teamID) {
+			return window;
+		}
+	}
+
+	return NULL;
+}
+//end
+
+
 ::EventTarget*
 Desktop::FindTarget(BMessenger& messenger)
 {
@@ -2160,6 +4056,14 @@ Desktop::FindTarget(BMessenger& messenger)
 		if (window->EventTarget().Messenger() == messenger)
 			return &window->EventTarget();
 	}
+	
+	//mak custom 
+	for (K_Window *window = k_fAllWindows.FirstWindow(); window != NULL;
+			window = window->NextWindow(k_kAllWindowList)) {
+		if (window->EventTarget().Messenger() == messenger)
+			return &window->EventTarget();
+	}
+	//custom end
 
 	return NULL;
 }
@@ -2180,12 +4084,50 @@ Desktop::MarkDirty(BRegion& region)
 }
 
 
+//khidki start
+void
+Desktop::K_MarkDirty(BRegion& region)
+{
+debug_printf("[Desktop]{K_MarkDirty}\n");
+	if (region.CountRects() == 0)
+	{debug_printf("[Desktop]{K_MarkDirty} CountRects()=%d\n",region.CountRects());
+		return;
+	}
+
+	if (LockAllWindows()) {
+	debug_printf("[Desktop]{K_MarkDirty} means region has rects\n");
+		// send redraw messages to all windows intersecting the dirty region
+		K__TriggerWindowRedrawing(region);
+		//_TriggerWindowRedrawing(region);//mak custom
+
+		UnlockAllWindows();
+	}
+
+debug_printf("[Desktop]{K_MarkDirty}ends\n");
+}
+//end
+
+
 void
 Desktop::Redraw()
 {
 	BRegion dirty(fVirtualScreen.Frame());
 	MarkDirty(dirty);
 }
+
+
+//khidki start
+void
+Desktop::K_Redraw()
+{
+debug_printf("[Desktop]{K_Redraw}\n");
+
+	BRegion dirty(fVirtualScreen.Frame());
+	K_MarkDirty(dirty);
+
+debug_printf("[Desktop]{K_Redraw}ends\n");
+}
+//end
 
 
 /*!	\brief Redraws the background (ie. the desktop window, if any).
@@ -2229,6 +4171,52 @@ Desktop::RedrawBackground()
 }
 
 
+//khidki start
+/*!	\brief Redraws the background (ie. the desktop window, if any).
+*/
+void
+Desktop::K_RedrawBackground()
+{
+debug_printf("[Desktop] {K_RedrawBackground} \n");
+
+	LockAllWindows();
+
+	BRegion redraw;
+
+	K_Window* window = K_CurrentWindows().FirstWindow();
+	if (window != NULL && window->Feel() == kDesktopWindowFeel) {
+		redraw = window->VisibleContentRegion();
+
+		// look for desktop background view, and update its background color
+		// TODO: is there a better way to do this?
+		K_View* view = window->TopView();
+		if (view != NULL)
+			view = view->FirstChild();
+
+		while (view != NULL) {
+			if (view->IsDesktopBackground()) {
+				view->SetViewColor(fWorkspaces[fCurrentWorkspace].Color());
+				break;
+			}
+			view = view->NextSibling();
+		}
+
+		window->ProcessDirtyRegion(redraw);
+	} else {
+		redraw = BackgroundRegion();
+		fBackgroundRegion.MakeEmpty();
+		_SetBackground(redraw);
+	}
+
+	K__WindowChanged(NULL);
+		// update workspaces view as well
+
+	UnlockAllWindows();
+}
+
+//end
+
+
 bool
 Desktop::ReloadDecor(DecorAddOn* oldDecor)
 {
@@ -2270,6 +4258,51 @@ Desktop::ReloadDecor(DecorAddOn* oldDecor)
 }
 
 
+//khidki start
+bool
+Desktop::K_ReloadDecor(K_DecorAddOn* oldDecor)
+{
+debug_printf("[Desktop]{K_ReloadDecor}\n");
+
+	AutoWriteLocker _(fWindowLock);
+
+	bool returnValue = true;
+
+	if (oldDecor != NULL) {
+		const K_DesktopListenerList* oldListeners
+			= &oldDecor->GetDesktopListeners();
+		for (int i = 0; i < oldListeners->CountItems(); i++)
+			K_UnregisterListener(oldListeners->ItemAt(i));
+	}
+
+	for (K_Window* window = k_fAllWindows.FirstWindow(); window != NULL;
+			window = window->NextWindow(kAllWindowList)) {
+		BRegion oldBorder;
+		window->GetBorderRegion(&oldBorder);
+
+		if (!window->ReloadDecor()) {
+			// prevent unloading previous add-on
+			returnValue = false;
+		}
+
+		BRegion border;
+		window->GetBorderRegion(&border);
+
+		border.Include(&oldBorder);
+		K_RebuildAndRedrawAfterWindowChange(window, border);
+	}
+
+	// register new listeners
+	const K_DesktopListenerList& newListeners
+		= k_gDecorManager.GetDesktopListeners();
+	for (int i = 0; i < newListeners.CountItems(); i++)
+ 		K_RegisterListener(newListeners.ItemAt(i));
+
+ 	return returnValue;
+}
+//end
+
+
 void
 Desktop::MinimizeApplication(team_id team)
 {
@@ -2285,6 +4318,29 @@ Desktop::MinimizeApplication(team_id team)
 		window->ServerWindow()->NotifyMinimize(true);
 	}
 }
+
+
+//khidki start
+void
+Desktop::K_MinimizeApplication(team_id team)
+{
+debug_printf("[Desktop]{K_MinimizeApplication}\n");
+
+	AutoWriteLocker locker(fWindowLock);
+
+	// Just minimize all windows of that application
+
+	for (K_Window *window = k_fAllWindows.FirstWindow(); window != NULL;
+			window = window->NextWindow(kAllWindowList)) {
+		if (window->KServerWindow()->ClientTeam() != team)
+			continue;
+
+		window->KServerWindow()->NotifyMinimize(true);
+	}
+
+debug_printf("[Desktop]{K_MinimizeApplication}end\n");
+}
+//end
 
 
 void
@@ -2303,6 +4359,30 @@ Desktop::BringApplicationToFront(team_id team)
 		window->ServerWindow()->NotifyMinimize(false);
 	}
 }
+
+
+//khidki start
+void
+Desktop::K_BringApplicationToFront(team_id team)
+{
+debug_printf("[Desktop]{K_BringApplicationToFront}\n");
+
+	AutoWriteLocker locker(fWindowLock);
+
+	// TODO: for now, just maximize all windows of that application
+	// TODO: have the ability to lock the current workspace
+
+	for (K_Window *window = k_fAllWindows.FirstWindow(); window != NULL;
+			window = window->NextWindow(k_kAllWindowList)) {
+		if (window->KServerWindow()->ClientTeam() != team)
+			continue;
+
+		window->KServerWindow()->NotifyMinimize(false);
+	}
+
+debug_printf("[Desktop]{K_BringApplicationToFront}end\n");
+}
+//end
 
 
 void
@@ -2332,6 +4412,41 @@ Desktop::WindowAction(int32 windowToken, int32 action)
 
 	UnlockAllWindows();
 }
+
+
+//khidki start
+void
+Desktop::K_WindowAction(int32 windowToken, int32 action)
+{
+debug_printf("[Desktop]{K_WindowAction}\n");
+
+	if (action != B_MINIMIZE_WINDOW && action != B_BRING_TO_FRONT)
+		return;
+
+	LockAllWindows();
+
+	::KServerWindow* serverWindow;
+	K_Window* window;
+	if (BPrivate::gDefaultTokens.GetToken(windowToken,
+			B_SERVER_TOKEN, (void**)&serverWindow) != B_OK
+		|| (window = serverWindow->Window()) == NULL) {
+		UnlockAllWindows();
+		return;
+	}
+
+	if (action == B_BRING_TO_FRONT && !window->IsMinimized()) {
+		// the window is visible, we just need to make it the front window
+		K_ActivateWindow(window);
+	} else {
+		// if not, ask the window if it wants to be unminimized
+		serverWindow->NotifyMinimize(action == B_MINIMIZE_WINDOW);
+	}
+
+	UnlockAllWindows();
+
+debug_printf("[Desktop]{K_WindowAction}end\n");
+}
+//end
 
 
 void
@@ -2375,6 +4490,55 @@ Desktop::WriteWindowList(team_id team, BPrivate::LinkSender& sender)
 
 	sender.Flush();
 }
+
+
+//khidki start
+void
+Desktop::K_WriteWindowList(team_id team, BPrivate::LinkSender& sender)
+{
+debug_printf("[Desktop]{K_WriteWindowList}\n");
+
+	AutoWriteLocker locker(fWindowLock);
+
+	// compute the number of windows
+
+	int32 count = 0;
+
+	for (K_Window *window = k_fAllWindows.FirstWindow(); window != NULL;
+			window = window->NextWindow(k_kAllWindowList)) {
+		if (team < B_OK || window->KServerWindow()->ClientTeam() == team)
+			count++;
+	}
+
+	// write list
+
+	sender.StartMessage(B_OK);
+	sender.Attach<int32>(count);
+
+	// first write the windows of the current workspace correctly ordered
+	for (K_Window *window = K_CurrentWindows().LastWindow(); window != NULL;
+			window = window->PreviousWindow(fCurrentWorkspace)) {
+		if (team >= B_OK && window->KServerWindow()->ClientTeam() != team)
+			continue;
+
+		sender.Attach<int32>(window->KServerWindow()->ServerToken());
+	}
+
+	// then write all the other windows
+	for (K_Window *window = k_fAllWindows.FirstWindow(); window != NULL;
+			window = window->NextWindow(k_kAllWindowList)) {
+		if ((team >= B_OK && window->KServerWindow()->ClientTeam() != team)
+			|| window->InWorkspace(fCurrentWorkspace))
+			continue;
+
+		sender.Attach<int32>(window->KServerWindow()->ServerToken());
+	}
+
+	sender.Flush();
+
+debug_printf("[Desktop]{K_WriteWindowList}end\n");
+}
+//end
 
 
 void
@@ -2424,6 +4588,57 @@ Desktop::WriteWindowInfo(int32 serverToken, BPrivate::LinkSender& sender)
 }
 
 
+//khidki start
+void
+Desktop::K_WriteWindowInfo(int32 serverToken, BPrivate::LinkSender& sender)
+{
+debug_printf("[Desktop]{K_WriteWindowInfo} TODO\n");
+
+	AutoWriteLocker locker(fWindowLock);
+	BAutolock tokenLocker(BPrivate::gDefaultTokens);
+
+	::KServerWindow* window;
+	if (BPrivate::gDefaultTokens.GetToken(serverToken,
+			B_SERVER_TOKEN, (void**)&window) != B_OK) {
+		sender.StartMessage(B_ENTRY_NOT_FOUND);
+		sender.Flush();
+		return;
+	}
+
+	window_info info;
+	window->GetInfo(info);
+
+	float tabSize = 0.0;
+	float borderSize = 0.0;
+	::K_Window* tmp = window->Window();
+	if (tmp) {
+		BMessage message;
+		if (tmp->GetDecoratorSettings(&message)) {
+			BRect tabFrame;
+			message.FindRect("tab frame", &tabFrame);
+			tabSize = tabFrame.bottom - tabFrame.top;
+			message.FindFloat("border width", &borderSize);
+		}
+	}
+
+	int32 length = window->Title() ? strlen(window->Title()) : 0;
+
+	sender.StartMessage(B_OK);
+	sender.Attach<int32>(sizeof(client_window_info) + length);
+	sender.Attach(&info, sizeof(window_info));
+	sender.Attach<float>(tabSize);
+	sender.Attach<float>(borderSize);
+
+	if (length > 0)
+		sender.Attach(window->Title(), length + 1);
+	else
+		sender.Attach<char>('\0');
+
+	sender.Flush();
+}
+//end
+
+
 void
 Desktop::WriteWindowOrder(int32 workspace, BPrivate::LinkSender& sender)
 {
@@ -2454,6 +4669,41 @@ Desktop::WriteWindowOrder(int32 workspace, BPrivate::LinkSender& sender)
 
 	UnlockSingleWindow();
 }
+
+
+//khidki start
+void
+Desktop::K_WriteWindowOrder(int32 workspace, BPrivate::LinkSender& sender)
+{
+debug_printf("[Desktop]{K_WriteWindowOrder} TODO\n");
+	LockSingleWindow();
+
+	if (workspace < 0)
+		workspace = fCurrentWorkspace;
+	else if (workspace >= kMaxWorkspaces) {
+		sender.StartMessage(B_BAD_VALUE);
+		sender.Flush();
+		UnlockSingleWindow();
+		return;
+	}
+
+	int32 count = K__Windows(workspace).Count();
+
+	// write list
+
+	sender.StartMessage(B_OK);
+	sender.Attach<int32>(count);
+
+	for (K_Window *window = K__Windows(workspace).LastWindow(); window != NULL;
+			window = window->PreviousWindow(workspace)) {
+		sender.Attach<int32>(window->KServerWindow()->ServerToken());
+	}
+
+	sender.Flush();
+
+	UnlockSingleWindow();
+}
+//end
 
 
 void
@@ -2522,6 +4772,78 @@ Desktop::WriteApplicationOrder(int32 workspace, BPrivate::LinkSender& sender)
 	sender.Flush();
 	free(teams);
 }
+
+
+//khidki start
+void
+Desktop::K_WriteApplicationOrder(int32 workspace, BPrivate::LinkSender& sender)
+{
+debug_printf("[Desktop]{K_WriteApplicationOrder} TODO\n");
+
+	fApplicationsLock.Lock();
+	LockSingleWindow();
+
+	int32 maxCount = fApplications.CountItems();
+
+	fApplicationsLock.Unlock();
+		// as long as we hold the window lock, no new window can appear
+
+	if (workspace < 0)
+		workspace = fCurrentWorkspace;
+	else if (workspace >= kMaxWorkspaces) {
+		sender.StartMessage(B_BAD_VALUE);
+		sender.Flush();
+		UnlockSingleWindow();
+		return;
+	}
+
+	// compute the list of applications on this workspace
+
+	team_id* teams = (team_id*)malloc(maxCount * sizeof(team_id));
+	if (teams == NULL) {
+		sender.StartMessage(B_NO_MEMORY);
+		sender.Flush();
+		UnlockSingleWindow();
+		return;
+	}
+
+	int32 count = 0;
+
+	for (K_Window *window = K__Windows(workspace).LastWindow(); window != NULL;
+			window = window->PreviousWindow(workspace)) {
+		team_id team = window->KServerWindow()->ClientTeam();
+		if (count > 1) {
+			// see if we already have this team
+			bool found = false;
+			for (int32 i = 0; i < count; i++) {
+				if (teams[i] == team) {
+					found = true;
+					break;
+				}
+			}
+			if (found)
+				continue;
+		}
+
+		ASSERT(count < maxCount);
+		teams[count++] = team;
+	}
+
+	UnlockSingleWindow();
+
+	// write list
+
+	sender.StartMessage(B_OK);
+	sender.Attach<int32>(count);
+
+	for (int32 i = 0; i < count; i++) {
+		sender.Attach<int32>(teams[i]);
+	}
+
+	sender.Flush();
+	free(teams);
+}
+//end
 
 
 void
@@ -2843,6 +5165,58 @@ Desktop::_DispatchMessage(int32 code, BPrivate::LinkReceiver& link)
 			break;
 		}
 
+//khidki start
+		case AS_SET_UI_COLOR_2:
+		{
+			color_which which;
+			rgb_color color;
+
+			if (link.Read<color_which>(&which) == B_OK
+					&& link.Read<rgb_color>(&color) == B_OK) {
+
+				const char* colorName = ui_color_name(which);
+				fPendingColors.SetColor(colorName, color);
+
+				DelayedMessage delayed(AS_SET_UI_COLORS_2, DM_60HZ_DELAY);
+				delayed.AddTarget(MessagePort());
+				delayed.SetMerge(DM_MERGE_CANCEL);
+
+				delayed.Attach<bool>(true);
+				delayed.Flush();
+			}
+
+			break;
+		}
+//khidki continue
+		case AS_SET_UI_COLORS_2:
+		{
+			bool flushPendingOnly = false;
+
+			if (link.Read<bool>(&flushPendingOnly) != B_OK
+				|| (flushPendingOnly &&
+						fPendingColors.CountNames(B_RGB_32_BIT_TYPE) == 0)) {
+				break;
+			}
+
+			if (!flushPendingOnly) {
+				// Client wants to set a color map
+				color_which which = B_NO_COLOR;
+				rgb_color color;
+
+				do {
+					if (link.Read<color_which>(&which) != B_OK
+						|| link.Read<rgb_color>(&color) != B_OK)
+						break;
+
+					fPendingColors.SetColor(ui_color_name(which), color);
+				} while (which != B_NO_COLOR);
+			}
+
+			K__FlushPendingColors();
+			break;
+		}
+//khidki end
+
 		// ToDo: Remove this again. It is a message sent by the
 		// invalidate_on_exit kernel debugger add-on to trigger a redraw
 		// after exiting a kernel debugger session.
@@ -2875,11 +5249,32 @@ Desktop::CurrentWindows()
 }
 
 
+//khidki start
+K_WindowList&
+Desktop::K_CurrentWindows()
+{
+#ifdef DEBUG_DESKTOP_K_Window
+debug_printf("[Desktop]{K_CurrentWindows}\n");
+#endif
+	return fWorkspaces[fCurrentWorkspace].K_Windows();
+}
+//end
+
+
 WindowList&
 Desktop::AllWindows()
 {
 	return fAllWindows;
 }
+
+
+//khidki start
+K_WindowList&
+Desktop::K_AllWindows()
+{
+	return k_fAllWindows;
+}
+//end
 
 
 Window*
@@ -2896,12 +5291,43 @@ Desktop::WindowForClientLooperPort(port_id port)
 }
 
 
+//khidki start
+K_Window*
+Desktop::K_WindowForClientLooperPort(port_id port)
+{
+debug_printf("[Desktop]{K_WindowForClientLooperPort} TODO\n");
+
+	ASSERT_MULTI_LOCKED(fWindowLock);
+
+	for (K_Window* window = k_fAllWindows.FirstWindow(); window != NULL;
+			window = window->NextWindow(k_kAllWindowList)) {
+		if (window->KServerWindow()->ClientLooperPort() == port)
+			return window;
+	}
+	return NULL;
+}
+//end
+
+
 WindowList&
 Desktop::_Windows(int32 index)
 {
 	ASSERT(index >= 0 && index < kMaxWorkspaces);
 	return fWorkspaces[index].Windows();
 }
+
+
+//khidki start
+K_WindowList&
+Desktop::K__Windows(int32 index)
+{
+#ifdef DEBUG_DESKTOP_K_Window
+debug_printf("[Desktop]{K__Windows}\n");
+#endif
+	ASSERT(index >= 0 && index < kMaxWorkspaces);
+	return fWorkspaces[index].K_Windows();
+}
+//end
 
 
 void
@@ -2952,10 +5378,68 @@ Desktop::_FlushPendingColors()
 }
 
 
+//khidki start
+void
+Desktop::K__FlushPendingColors()
+{
+debug_printf("[Desktop]{K__FlushPendingColors} TODO\n");
+
+	// Update all windows while we are holding the write lock.
+
+	int32 count = fPendingColors.CountNames(B_RGB_32_BIT_TYPE);
+	if (count == 0)
+		return;
+
+	bool changed[count];
+	LockedDesktopSettings settings(this);
+	settings.SetUIColors(fPendingColors, &changed[0]);
+
+	int32 index = 0;
+	char* name = NULL;
+	type_code type = B_RGB_32_BIT_TYPE;
+	rgb_color color;
+	color_which which = B_NO_COLOR;
+	BMessage clientMessage(B_COLORS_UPDATED);
+
+	while (fPendingColors.GetInfo(type, index, &name, &type) == B_OK) {
+		which = which_ui_color(name);
+		if (which == B_NO_COLOR || fPendingColors.FindColor(name,
+				&color) != B_OK || !changed[index]) {
+			++index;
+			continue;
+		}
+
+		for (K_Window* window = k_fAllWindows.FirstWindow(); window != NULL;
+				window = window->NextWindow(k_kAllWindowList)) {
+			K_ColorUpdated(window, which, color);
+		}
+
+		// Ensure client only gets list of changed colors
+		clientMessage.AddColor(name, color);
+		++index;
+	}
+
+	// Notify client applications
+	BAutolock appListLock(fApplicationsLock);
+	for (int32 index = 0; index < fApplications.CountItems(); ++index) {
+		fApplications.ItemAt(index)->SendMessageToClient(&clientMessage);
+	}
+
+	fPendingColors.MakeEmpty();
+}
+//end
+
+
 void
 Desktop::_UpdateFloating(int32 previousWorkspace, int32 nextWorkspace,
 	Window* mouseEventWindow)
 {
+//khidki start
+if(mouseEventWindow==NULL)
+{
+	debug_printf("[Desktop]{_UpdateFloating}mouseEvent=NULL\n");
+}
+//end
 	if (previousWorkspace == -1)
 		previousWorkspace = fCurrentWorkspace;
 	if (nextWorkspace == -1)
@@ -3014,8 +5498,11 @@ Desktop::_UpdateBack()
 {
 	fBack = NULL;
 
+int i=0;//mak
 	for (Window* window = CurrentWindows().FirstWindow(); window != NULL;
 			window = window->NextWindow(fCurrentWorkspace)) {
+		i++;
+		debug_printf("[Desktop]{_UpdateBack}i=%d\n",i);
 		if (window->IsHidden() || window->Feel() == kDesktopWindowFeel)
 			continue;
 
@@ -3036,9 +5523,13 @@ void
 Desktop::_UpdateFront(bool updateFloating)
 {
 	fFront = NULL;
+	k_fFront=NULL;//mak custom 
+
+int i=0;//for counting
 
 	for (Window* window = CurrentWindows().LastWindow(); window != NULL;
 			window = window->PreviousWindow(fCurrentWorkspace)) {
+			i++;
 		if (window->IsHidden() || window->IsFloating()
 			|| !window->SupportsFront())
 			continue;
@@ -3058,6 +5549,157 @@ Desktop::_UpdateFronts(bool updateFloating)
 	_UpdateBack();
 	_UpdateFront(updateFloating);
 }
+
+
+//khidki start
+void
+Desktop::K__UpdateFloating(int32 previousWorkspace, int32 nextWorkspace,
+	K_Window* mouseEventWindow)
+{
+debug_printf("[Desktop]{K__UpdateFloating}\n");
+debug_printf("[Desktop]{K__UpdateFloating}previousWorkspace=%d\n",previousWorkspace);
+debug_printf("[Desktop]{K__UpdateFloating}nextWorkspace=%d\n",nextWorkspace);
+//khidki start
+if(mouseEventWindow==NULL)
+{
+	debug_printf("[Desktop]{K__UpdateFloating}mouseEvent=NULL\n");
+}
+//end
+
+	if (previousWorkspace == -1)
+		previousWorkspace = fCurrentWorkspace;
+	if (nextWorkspace == -1)
+		nextWorkspace = previousWorkspace;
+
+	for (K_Window* floating = k_fSubsetWindows.FirstWindow(); floating != NULL;
+			floating = floating->NextWindow(k_kSubsetList)) {
+			debug_printf("[Desktop]{K__UpdateFloating}inside for loop\n");
+		// we only care about app/subset floating windows
+		if (floating->Feel() != B_FLOATING_SUBSET_WINDOW_FEEL
+			&& floating->Feel() != B_FLOATING_APP_WINDOW_FEEL)
+			continue;
+
+		if (k_fFront != NULL && k_fFront->IsNormal()
+			&& floating->HasInSubset(k_fFront)) {
+			// is now visible
+			if (K__Windows(previousWorkspace).HasWindow(floating)
+				&& previousWorkspace != nextWorkspace
+				&& !floating->InSubsetWorkspace(previousWorkspace)) {
+				// but no longer on the previous workspace
+				K__Windows(previousWorkspace).RemoveWindow(floating);
+				floating->SetCurrentWorkspace(-1);
+			}
+
+			if (!K__Windows(nextWorkspace).HasWindow(floating)) {
+				// but wasn't before
+				K__Windows(nextWorkspace).AddWindow(floating,
+					floating->Frontmost(K__Windows(nextWorkspace).FirstWindow(),
+					nextWorkspace));
+				floating->SetCurrentWorkspace(nextWorkspace);
+				if (mouseEventWindow != k_fFront)
+					K__ShowWindow(floating);
+
+				// TODO: put the floating last in the floating window list to
+				// preserve the on screen window order
+			}
+		} else if (K__Windows(previousWorkspace).HasWindow(floating)
+			&& !floating->InSubsetWorkspace(previousWorkspace)) {
+			// was visible, but is no longer
+
+			K__Windows(previousWorkspace).RemoveWindow(floating);
+			floating->SetCurrentWorkspace(-1);
+			K__HideWindow(floating);
+
+			if (K_FocusWindow() == floating)
+				K_SetFocusWindow();
+		}
+	}
+
+debug_printf("[Desktop]{K__UpdateFloating}ends\n");
+}
+
+
+/*!	Search the visible windows for a valid back window
+	(only desktop windows can't be back windows)
+*/
+//just set k_fBack which is Back window, which is front of the queue
+void
+Desktop::K__UpdateBack()
+{
+debug_printf("[Desktop]{K__UpdateBack}\n");
+
+	k_fBack = NULL;
+	fBack = NULL; //mak custom {this will let the BWindow to loose focus when we click  on KWindow.}
+
+int i=0;
+	for (K_Window* window = K_CurrentWindows().FirstWindow(); window != NULL;
+			window = window->NextWindow(fCurrentWorkspace)) {
+		i++;
+		debug_printf("[Desktop]{K__UpdateBack}i=%d\n",i);
+		if (window->IsHidden() || window->Feel() == kDesktopWindowFeel)
+		{
+		debug_printf("[Desktop]{K__UpdateBack}jaatbar cant be k_fBack\n");
+			continue;
+		}
+
+		k_fBack = window;
+		break;
+	}
+
+debug_printf("[Desktop]{K__UpdateBack}end\n");
+}
+
+
+/*!	Search the visible windows for a valid front window
+	(only normal and modal windows can be front windows)
+
+	The only place where you don't want to update floating windows is
+	during a workspace change - because then you'll call _UpdateFloating()
+	yourself.
+*/
+//just set fFront which is front window, which is last of the queue
+void
+Desktop::K__UpdateFront(bool updateFloating)
+{
+debug_printf("[Desktop]{K__UpdateFront}\n");
+
+	k_fFront = NULL;
+	fFront = NULL; //mak custom [make the front BWindow to NULL]
+
+int i = 0;
+	for (K_Window* window = K_CurrentWindows().LastWindow(); window != NULL;
+			window = window->PreviousWindow(fCurrentWorkspace)) {
+		i++;
+		debug_printf("[Desktop]{K__UpdateFront}i=%d\n",i);
+		if (window->IsHidden() || window->IsFloating()
+			|| !window->SupportsFront())
+		{
+		debug_printf("[Desktop]{K__UpdateFront}continue to previous window\n");
+			continue;
+		}
+
+		k_fFront = window;
+		break;
+	}
+
+	if (updateFloating)
+		K__UpdateFloating();
+
+debug_printf("[Desktop]{K__UpdateFront}end\n");
+}
+
+
+void
+Desktop::K__UpdateFronts(bool updateFloating)
+{
+debug_printf("[Desktop]{K__UpdateFronts}\n");
+
+	K__UpdateBack();
+	K__UpdateFront(updateFloating);
+
+debug_printf("[Desktop]{K__UpdateFronts}end\n");
+}
+//end
 
 
 bool
@@ -3092,6 +5734,43 @@ Desktop::_WindowCanHaveFocus(Window* window) const
 		&& !window->IsHidden();
 }
 
+//khidki start
+bool
+Desktop::K__WindowHasModal(K_Window* window) const
+{
+debug_printf("[Desktop]{K__WindowHasModal} TODO\n");
+
+	if (window == NULL)
+		return false;
+
+	for (K_Window* modal = k_fSubsetWindows.FirstWindow(); modal != NULL;
+			modal = modal->NextWindow(k_kSubsetList)) {
+		// only visible modal windows count
+		if (!modal->IsModal() || modal->IsHidden())
+			continue;
+
+		if (modal->HasInSubset(window))
+			return true;
+	}
+
+	return false;
+}
+
+
+/*!	Determines whether or not the specified \a window can have focus at all.
+*/
+bool
+Desktop::K__WindowCanHaveFocus(K_Window* window) const
+{
+	return window != NULL
+		&& window->InWorkspace(fCurrentWorkspace)
+		&& (window->Flags() & B_AVOID_FOCUS) == 0
+		&& !K__WindowHasModal(window)
+		&& !window->IsHidden();
+}
+
+//end
+
 
 /*!	You must at least hold a single window lock when calling this method.
 */
@@ -3106,7 +5785,56 @@ Desktop::_WindowChanged(Window* window)
 		WorkspacesView* view = fWorkspacesViews.ItemAt(i);
 		view->WindowChanged(window);
 	}
+
+//khidki start
+debug_printf("[Desktop] {K__WindowChanged}k_fWorkspacesViews.CountItems()=%d\n",k_fWorkspacesViews.CountItems());//it is 0
+//end
+//since k_fWorkspacesViews.CountItems() =0 so the loop is not executed...
+	for (uint32 i = k_fWorkspacesViews.CountItems(); i-- > 0;) {
+		debug_printf("i=%d",i);
+	//	K_WorkspacesView* view = k_fWorkspacesViews.ItemAt(i);
+	//	view->WindowChanged(window);
+	//todo later
+	}
 }
+
+
+//start khidki
+/*!	You must at least hold a single window lock when calling this method.
+*/
+void
+Desktop::K__WindowChanged(K_Window* window)
+{
+debug_printf("[Desktop] {K__WindowChanged}\n");
+
+	ASSERT_MULTI_LOCKED(fWindowLock);
+
+	BAutolock _(fWorkspacesLock);
+
+//khidki start
+debug_printf("[Desktop] {K__WindowChanged}k_fWorkspacesViews.CountItems()=%d\n",k_fWorkspacesViews.CountItems());//it is 0
+//end
+//since k_fWorkspacesViews.CountItems() =0 so the loop is not executed...
+	for (uint32 i = k_fWorkspacesViews.CountItems(); i-- > 0;) {
+		debug_printf("i=%d",i);
+		K_WorkspacesView* view = k_fWorkspacesViews.ItemAt(i);
+		view->WindowChanged(window);
+	}
+//khidki start
+debug_printf("[Desktop] {K__WindowChanged}fWorkspacesViews.CountItems()=%d\n",fWorkspacesViews.CountItems());
+//it is also 0
+//so loop is not executed...
+	for (uint32 i = fWorkspacesViews.CountItems(); i-- > 0;) {
+		debug_printf("i=%d",i);
+		//WorkspacesView* view = fWorkspacesViews.ItemAt(i);
+		//view->WindowChanged(window);
+	}
+
+//end
+
+debug_printf("[Desktop] {K__WindowChanged}ends\n");
+}
+//end
 
 
 /*!	You must at least hold a single window lock when calling this method.
@@ -3123,6 +5851,32 @@ Desktop::_WindowRemoved(Window* window)
 		view->WindowRemoved(window);
 	}
 }
+
+
+//khidki start
+/*!	You must at least hold a single window lock when calling this method.
+*/
+void
+Desktop::K__WindowRemoved(K_Window* window)
+{
+debug_printf("[Desktop]{K__WindowRemoved} TODO\n");
+
+	ASSERT_MULTI_LOCKED(fWindowLock);
+
+	BAutolock _(fWorkspacesLock);
+
+//debug_printf("[Desktop]{K__WindowRemoved} fWorkspacesViews.CountItems()=%d, k_fWorkspacesViews.CountItems()\n");
+
+
+	for (uint32 i = k_fWorkspacesViews.CountItems(); i-- > 0;) {
+		debug_printf("[Desktop]{K__WindowRemoved} inside loop\n");
+		K_WorkspacesView* view = k_fWorkspacesViews.ItemAt(i);
+		view->WindowRemoved(window);
+	}//totodo
+
+debug_printf("[Desktop]{K_WindowRemoved}end\n");
+}
+//end
 
 
 /*!	Shows the window on the screen - it does this independently of the
@@ -3154,6 +5908,58 @@ Desktop::_ShowWindow(Window* window, bool affectsOtherWindows)
 }
 
 
+//khidki start
+/*!	Shows the window on the screen - it does this independently of the
+	Window::IsHidden() state.
+*/
+void
+Desktop::K__ShowWindow(K_Window* window, bool affectsOtherWindows)
+{
+debug_printf("[Desktop] {K__ShowWindow} \n");
+
+	BRegion background;//just a empty region
+	K__RebuildClippingForAllWindows(background);//background has the 6 rect which has complete screen except the visible region of window.
+	_SetBackground(background);
+	K__WindowChanged(window);
+
+
+	BRegion dirty(window->VisibleRegion());
+//khidki start
+//dirty has two rectangle that is visibe region of the window
+//1=(95,71,223,94)
+//2=(95,95,505,405)
+	debug_printf("[K_Window]{K__ShowWindow}debug after dirty\n");
+	debug_printf("dirty.fCount=%d\n",dirty.FCount());
+	debug_printf("dirty.fDataSize=%d\n",dirty.FDataSize());
+	for (int32 i = 0; i < dirty.FCount(); i++) {
+	debug_printf("[K_Window]{K__ShowWindow} inside loop i=%d\n",i);
+		clipping_rect *rect = dirty.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+//end
+
+	if (!affectsOtherWindows) {//it is not exectued as of now
+	debug_printf("[Desktop] {K__ShowWindow} !affectsOtherWindows \n");
+		// everything that is now visible in the
+		// window needs a redraw, but other windows
+		// are not affected, we can call ProcessDirtyRegion()
+		// of the window, and don't have to use MarkDirty()
+		window->ProcessDirtyRegion(dirty);
+	} else
+		K_MarkDirty(dirty);
+
+	if (window->KServerWindow()->HasDirectFrameBufferAccess()) {
+	debug_printf("[Desktop] {K__ShowWindow} HasDirectFrameBufferAccess \n");
+		window->KServerWindow()->HandleDirectConnection(
+			B_DIRECT_START | B_BUFFER_RESET);
+	}
+debug_printf("[Desktop] {K__ShowWindow} ended\n");
+}
+//khidki end
+
+
 /*!	Hides the window from the screen - it does this independently of the
 	Window::IsHidden() state.
 */
@@ -3179,6 +5985,39 @@ Desktop::_HideWindow(Window* window)
 
 	MarkDirty(dirty);
 }
+
+
+//start khidki
+/*!	Hides the window from the screen - it does this independently of the
+	Window::IsHidden() state.
+*/
+void
+Desktop::K__HideWindow(K_Window* window)
+{
+debug_printf("[Desktop]{K__HideWindow}\n");
+
+	if (window->KServerWindow()->IsDirectlyAccessing())
+		window->KServerWindow()->HandleDirectConnection(B_DIRECT_STOP);
+
+	// after rebuilding the clipping,
+	// this window will not have a visible
+	// region anymore, so we need to remember
+	// it now
+	// (actually that's not true, since
+	// hidden windows are excluded from the
+	// clipping calculation, but anyways)
+	BRegion dirty(window->VisibleRegion());
+
+	BRegion background;
+	K__RebuildClippingForAllWindows(background);
+	_SetBackground(background);
+	K__WindowChanged(window);
+
+	K_MarkDirty(dirty);
+
+debug_printf("[Desktop]{K__HideWindow}end\n");
+}
+//end
 
 
 /*!	Updates the workspaces of all subset windows with regard to the
@@ -3220,6 +6059,56 @@ Desktop::_UpdateSubsetWorkspaces(Window* window, int32 previousIndex,
 		}
 	}
 }
+
+
+//khidki start
+/*!	Updates the workspaces of all subset windows with regard to the
+	specifed window.
+	If newIndex is not -1, it will move all subset windows that belong to
+	the specifed window to the new workspace; this form is only called by
+	SetWorkspace().
+*/
+void
+Desktop::K__UpdateSubsetWorkspaces(K_Window* window, int32 previousIndex,
+	int32 newIndex)
+{
+debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} \n");
+
+	STRACE(("K__UpdateSubsetWorkspaces(window %p, %s)\n", window,
+		window->Title()));
+
+	// if the window is hidden, the subset windows are up-to-date already
+	if (!window->IsNormal() || window->IsHidden())
+		return;
+
+	for (K_Window* subset = k_fSubsetWindows.FirstWindow(); subset != NULL;
+			subset = subset->NextWindow(k_kSubsetList)) {
+		debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} has k_fSubsetWindows\n");
+		if (subset->Feel() == B_MODAL_ALL_WINDOW_FEEL
+			|| subset->Feel() == B_FLOATING_ALL_WINDOW_FEEL) {
+			debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} MODAL or FLOATING\n");
+			// These windows are always visible on all workspaces,
+			// no need to update them.
+			continue;
+		}
+
+		if (subset->IsFloating()) {
+			debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} IsFloating \n");
+			// Floating windows are inserted and removed to the current
+			// workspace as the need arises - they are not handled here
+			// but in _UpdateFront()
+			continue;
+		}
+
+		if (subset->HasInSubset(window)) {
+		debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} subset->HasInSubset \n");
+			// adopt the workspace change
+			K_SetWindowWorkspaces(subset, subset->SubsetWorkspaces());
+		}
+	}
+debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} ended\n");
+}
+//khidki end
 
 
 /*!	\brief Adds or removes the window to or from the workspaces it's on.
@@ -3300,6 +6189,98 @@ Desktop::_ChangeWindowWorkspaces(Window* window, uint32 oldWorkspaces,
 }
 
 
+//khidki start
+/*!	\brief Adds or removes the window to or from the workspaces it's on.
+*/
+void
+Desktop::K__ChangeWindowWorkspaces(K_Window* window, uint32 oldWorkspaces,
+	uint32 newWorkspaces)
+{
+debug_printf("[Desktop] {K__ChangeWindowWorkspaces} \n");
+debug_printf("[Desktop] {K__ChangeWindowWorkspaces} oldWorkspaces =%d and newWorkspaces =%d\n", oldWorkspaces,newWorkspaces);
+debug_printf("[Desktop] {K__ChangeWindowWorkspaces} kMaxWorkspaces =%d\n",kMaxWorkspaces);
+
+	if (oldWorkspaces == newWorkspaces)
+		return;
+
+	// apply changes to the workspaces' window lists
+
+	LockAllWindows();
+
+	// NOTE: we bypass the anchor-mechanism by intention when switching
+	// the workspace programmatically.
+
+	for (int32 i = 0; i < kMaxWorkspaces; i++) {
+		if (workspace_in_workspaces(i, oldWorkspaces)) {
+		debug_printf("[Desktop] {K__ChangeWindowWorkspaces} workspace_in_workspaces(i, oldWorkspaces)\n");
+			// window is on this workspace, is it anymore?
+			if (!workspace_in_workspaces(i, newWorkspaces)) {
+			debug_printf("[Desktop] {K__ChangeWindowWorkspaces} workspace_in_workspaces(i, newWorkspaces\n");
+				K__Windows(i).RemoveWindow(window);
+				if (k_fLastWorkspaceFocus[i] == window)
+					k_fLastWorkspaceFocus[i] = NULL;
+
+				if (i == CurrentWorkspace()) {
+					// remove its appearance from the current workspace
+					window->SetCurrentWorkspace(-1);
+
+					if (!window->IsHidden())
+						K__HideWindow(window);
+				}
+			}
+		} else {
+		debug_printf("[Desktop] {K__ChangeWindowWorkspaces} else part workspace_in_workspaces(i, oldWorkspaces)\n");
+			// window was not on this workspace, is it now?
+			if (workspace_in_workspaces(i, newWorkspaces)) {
+			debug_printf("[Desktop] {K__ChangeWindowWorkspaces} workspace_in_workspaces(i, newWorkspaces))\n");
+			debug_printf("[Desktop] {K__ChangeWindowWorkspaces} i=%d\n",i);
+				K__Windows(i).AddWindow(window,
+					window->Frontmost(K__Windows(i).FirstWindow(), i));
+
+				if (i == CurrentWorkspace()) {
+				debug_printf("[Desktop] {K__ChangeWindowWorkspaces} i == CurrentWorkspace())\n");
+					// make the window visible in current workspace
+					window->SetCurrentWorkspace(fCurrentWorkspace);
+
+					if (!window->IsHidden()) {
+					debug_printf("[Desktop] {K__ChangeWindowWorkspaces} !window->IsHidden()\n");
+						// This only affects other windows if this window has
+						// floating or modal windows that need to be shown as
+						// well
+						// TODO: take care of this
+						K__ShowWindow(window, K_FrontWindow() == window);
+					}
+				}
+			}
+		}
+	}
+
+	// If the window is visible only on one workspace, we set it's current
+	// position in that workspace (so that WorkspacesView will find us).
+	int32 firstWorkspace = -1;
+	for (int32 i = 0; i < kMaxWorkspaces; i++) {
+		if ((newWorkspaces & (1L << i)) != 0) {
+			if (firstWorkspace != -1) {
+				firstWorkspace = -1;
+				break;
+			}
+			firstWorkspace = i;
+		}
+	}
+	if (firstWorkspace >= 0)
+		window->Anchor(firstWorkspace).position = window->Frame().LeftTop();
+
+	// take care about modals and floating windows
+	K__UpdateSubsetWorkspaces(window);
+
+	K_NotifyWindowWorkspacesChanged(window, newWorkspaces);// tododo
+
+	UnlockAllWindows();
+debug_printf("[Desktop] {K__ChangeWindowWorkspaces} ended\n");
+}
+//end
+
+
 void
 Desktop::_BringWindowsToFront(WindowList& windows, int32 list, bool wereVisible)
 {
@@ -3340,6 +6321,117 @@ Desktop::_BringWindowsToFront(WindowList& windows, int32 list, bool wereVisible)
 }
 
 
+//khidki start
+void
+Desktop::K__BringWindowsToFront(K_WindowList& windows, int32 list, bool wereVisible)
+{
+	debug_printf("[Desktop] {K__BringWindowsToFront} \n");
+	debug_printf("[Desktop] {K__BringWindowsToFront} wereVisible=%d\n",wereVisible);
+debug_printf("[Desktop] {K__BringWindowsToFront} K_WindowList Count=%d\n",windows.Count());
+
+	// we don't need to redraw what is currently
+	// visible of the window
+	BRegion clean;
+
+	for (K_Window* window = windows.FirstWindow(); window != NULL;
+			window = window->NextWindow(list)) {
+		if (wereVisible)
+			clean.Include(&window->VisibleRegion());
+
+		K_CurrentWindows().AddWindow(window,
+			window->Frontmost(K_CurrentWindows().FirstWindow(),
+				fCurrentWorkspace));
+
+		K__WindowChanged(window);
+	}
+
+//khidki start
+debug_printf("[Desktop]{K__BringWindowsToFront}debug clean\n");
+	debug_printf("clean.fCount=%d\n",clean.FCount());
+	debug_printf("clean.fDataSize=%d\n",clean.FDataSize());
+	for (int32 i = 0; i < clean.FCount(); i++) {
+	debug_printf("[Desktop]{K__BringWindowsToFront} inside loop i=%d\n",i);
+		clipping_rect *rect = clean.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+//end
+//clean has two react
+//it contains the visible part of window
+//1=(95,71,223,94)
+//2=(95,95,505,405)
+
+	BRegion dummy;
+	K__RebuildClippingForAllWindows(dummy);
+
+	// redraw what became visible of the window(s)
+
+
+//dummy has the screen without the visible part of the window 
+//it has 6 rect
+//khidki start
+debug_printf("[K_Window]{K__BringWindowsToFront}debug dummy\n");
+	debug_printf("dummy.fCount=%d\n",dummy.FCount());
+	debug_printf("dummy.fDataSize=%d\n",dummy.FDataSize());
+	for (int32 i = 0; i < dummy.FCount(); i++) {
+	debug_printf("[K_Window]{K__BringWindowsToFront} inside loop i=%d\n",i);
+		clipping_rect *rect = dummy.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+//end
+
+
+	BRegion dirty;
+	for (K_Window* window = windows.FirstWindow(); window != NULL;
+			window = window->NextWindow(list)) {
+		dirty.Include(&window->VisibleRegion());
+	}
+//dirty has two rects
+//dirty contains the visible region of the window
+//khidki start
+debug_printf("[K_Window]{K__BringWindowsToFront}debug dirty\n");
+	debug_printf("dirty.fCount=%d\n",dirty.FCount());
+	debug_printf("dirty.fDataSize=%d\n",dirty.FDataSize());
+	for (int32 i = 0; i < dirty.FCount(); i++) {
+	debug_printf("[K_Window]{K__BringWindowsToFront} inside loop i=%d\n",i);
+		clipping_rect *rect = dirty.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+//end
+
+	dirty.Exclude(&clean);
+//khidki start
+//both clean and dirty has the visible region of the window so after exclude 
+//dirty will have 0 rect
+debug_printf("[K_Window]{K__BringWindowsToFront}debug dirty after Exclude(&clean)\n");
+	debug_printf("dirty.fCount=%d\n",dirty.FCount());
+	debug_printf("dirty.fDataSize=%d\n",dirty.FDataSize());
+	for (int32 i = 0; i < dirty.FCount(); i++) {
+	debug_printf("[K_Window]{K__BringWindowsToFront} inside loop i=%d\n",i);
+		clipping_rect *rect = dirty.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+//end
+	K_MarkDirty(dirty);
+
+	K__UpdateFront();
+
+	if (windows.FirstWindow() == k_fBack || k_fBack == NULL)
+	{
+	debug_printf("[K_Window]{K__BringWindowsToFront}windows.FirstWindow() ==k_fBack || k_fBack == NULL\n");
+		K__UpdateBack();
+	}
+}
+//end
+
+
 /*!	Returns the last focussed non-hidden subset window belonging to the
 	specified \a window.
 */
@@ -3358,6 +6450,30 @@ Desktop::_LastFocusSubsetWindow(Window* window)
 
 	return NULL;
 }
+
+
+//khidki start
+/*!	Returns the last focussed non-hidden subset window belonging to the
+	specified \a window.
+*/
+K_Window*
+Desktop::K__LastFocusSubsetWindow(K_Window* window)
+{
+debug_printf("[Desktop] {K__LastFocusSubsetWindow} \n");
+
+	if (window == NULL)
+		return NULL;
+
+	for (K_Window* front = k_fFocusList.LastWindow(); front != NULL;
+			front = front->PreviousWindow(k_kFocusList)) {
+		if (front != window && !front->IsHidden()
+			&& window->HasInSubset(front))
+			return front;
+	}
+
+	return NULL;
+}
+//end
 
 
 /*!	\brief Checks whether or not a fake mouse moved message needs to be sent
@@ -3416,6 +6532,77 @@ Desktop::_SendFakeMouseMoved(Window* window)
 }
 
 
+//khidki start
+/*!	\brief Checks whether or not a fake mouse moved message needs to be sent
+	to the previous mouse window.
+
+	You need to have the all window lock held when calling this method.
+*/
+bool
+Desktop::K__CheckSendFakeMouseMoved(const K_Window* lastWindowUnderMouse)
+{
+debug_printf("[Desktop] {K_CheckSendFakeMouseMoved} \n");
+
+	K_Window* window = K_WindowAt(fLastMousePosition);
+	return window != lastWindowUnderMouse;
+}
+
+
+/*!	\brief Sends a fake B_MOUSE_MOVED event to the window under the mouse,
+		and also updates the current view under the mouse.
+
+	This has only to be done in case the view changed without mouse movement,
+	ie. because of a workspace change, a closing window, or programmatic window
+	movement.
+
+	You must not have locked any windows when calling this method.
+*/
+void
+Desktop::K__SendFakeMouseMoved(K_Window* window)
+{
+	debug_printf("[Desktop]{K__SendFakeMouseMoved}\n");
+
+	int32 viewToken = B_NULL_TOKEN;
+	EventTarget* target = NULL;
+
+	LockAllWindows();
+
+	if (window == NULL)
+		window = K_WindowAt(fLastMousePosition);
+
+	if (window != NULL) {
+		BMessage message;
+		window->MouseMoved(&message, fLastMousePosition, &viewToken, true,
+			true);
+
+		if (viewToken != B_NULL_TOKEN)
+			target = &window->EventTarget();
+	}
+
+	if (viewToken != B_NULL_TOKEN)
+	{
+	debug_printf("[Desktop]{K__SendFakeMouseMoved}viewToken != B_NULL_TOKEN\n");
+	
+		K_SetViewUnderMouse(window, viewToken);
+	}
+	else {
+	debug_printf("[Desktop]{K__SendFakeMouseMoved}viewToken != B_NULL_TOKEN else part\n");
+
+		K_SetViewUnderMouse(NULL, B_NULL_TOKEN);
+		SetCursor(NULL);
+	}
+
+	UnlockAllWindows();
+
+	if (target != NULL)
+		EventDispatcher().SendFakeMouseMoved(*target, viewToken);
+
+
+debug_printf("[Desktop]{K__SendFakeMouseMoved}end\n");
+}
+//end
+
+
 Screen*
 Desktop::_DetermineScreenFor(BRect frame)
 {
@@ -3451,22 +6638,343 @@ Desktop::_RebuildClippingForAllWindows(BRegion& stillAvailableOnScreen)
 			stillAvailableOnScreen.Exclude(&window->VisibleRegion());
 		}
 	}
+	
+
+//mak start
+// set clipping of each window
+	for (K_Window* window = K_CurrentWindows().LastWindow(); window != NULL;
+			window = window->PreviousWindow(fCurrentWorkspace)) {
+		if (!window->IsHidden()) {
+		debug_printf("[][Desktop]{RebuildClippingForAllWindows}!window->IsHidden()\n");
+			window->SetClipping(&stillAvailableOnScreen);
+			window->SetScreen(_DetermineScreenFor(window->Frame()));
+
+			if (window->KServerWindow()->IsDirectlyAccessing()) {
+				window->KServerWindow()->HandleDirectConnection(
+					B_DIRECT_MODIFY | B_CLIPPING_MODIFIED);
+			}
+
+			// that windows region is not available on screen anymore
+			stillAvailableOnScreen.Exclude(&window->VisibleRegion());
+		}
+	}
+//end
+
 }
+
+
+//khidki start
+void
+Desktop::K__RebuildClippingForAllWindows(BRegion& stillAvailableOnScreen)
+{
+debug_printf("[Desktop]{K__RebuildClippingForAllWindows}\n");
+
+	// the available region on screen starts with the entire screen area
+	// each window on the screen will take a portion from that area
+
+	// figure out what the entire screen area is
+	stillAvailableOnScreen = fScreenRegion;//here we have the region of complete screen
+//khidki start
+	debug_printf("[Desktop]{K__RebuildClippingForAllWindows}debug stillAvailableOnScreen\n");
+	debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
+	debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+	for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) {
+	debug_printf("[Desktop]{K__RebuildClippingForAllWindows} inside loop i=%d\n",i);
+		clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+	//end
+
+debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
+debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+
+clipping_rect clip_bounds = stillAvailableOnScreen.get_Bounds();
+clipping_rect* clip_data = stillAvailableOnScreen.get_Data();
+
+debug_printf("stillAvailableOnScreen.fBounds.left=%d\n",clip_bounds.left);
+debug_printf("stillAvailableOnScreen.fBounds.top=%d\n",clip_bounds.top);
+debug_printf("stillAvailableOnScreen.fBounds.right=%d\n",clip_bounds.right);
+debug_printf("stillAvailableOnScreen.fBounds.bottom=%d\n",clip_bounds.bottom);
+
+debug_printf("stillAvailableOnScreen.fData->left=%d\n",clip_data->left);
+debug_printf("stillAvailableOnScreen.fData->top=%d\n",clip_data->top);
+debug_printf("stillAvailableOnScreen.fData->right=%d\n",clip_data->right);
+debug_printf("stillAvailableOnScreen.fData->bottom=%d\n",clip_data->bottom);
+
+	// set clipping of each window
+	for (K_Window* window = K_CurrentWindows().LastWindow(); window != NULL;
+			window = window->PreviousWindow(fCurrentWorkspace)) {
+		if (!window->IsHidden()) {
+			debug_printf("[Desktop]{K_RebuildClippingForAllWindows}!window->IsHidden()\n");
+			window->SetClipping(&stillAvailableOnScreen);
+			//khidki start
+			debug_printf("[Desktop]{K__RebuildClippingForAllWindows}debug after SetClipping()\n");
+			debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
+			debug_printf("stillAvailableOnScreen.fDataSize=%d\n", stillAvailableOnScreen.FDataSize());
+			for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) 
+			{
+			debug_printf("[Desktop]{K__RebuildClippingForAllWindows} inside loop2 i=%d\n",i);
+			clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
+			debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			}
+		//end
+			//window->Frame returns fFrame which is rect 100,100,500,400 size of window
+			window->SetScreen(_DetermineScreenFor(window->Frame()));
+
+			if (window->KServerWindow()->IsDirectlyAccessing()) {
+				window->KServerWindow()->HandleDirectConnection(
+					B_DIRECT_MODIFY | B_CLIPPING_MODIFIED);
+			}
+
+				//window->VisibleRegion() returns fVisibleRegion
+				//which contains two rects
+				//1=95,71,223,94
+				//2=95,95,505,405
+			// that windows region is not available on screen anymore
+			stillAvailableOnScreen.Exclude(&window->VisibleRegion());
+			//after this we exclude the visible region from the stillAvailableOnScreen
+			//now stillAvailableOnScreen has 6 rect
+			//1=(0,0,1023,70)
+			//2=(0,71,94,94)
+			//3=(224,71,1023,94)
+			//4=(0,95,94,405)
+			//5=(506,95,1023,405)
+			//6=(0,406,1023,767)
+			//khidki start
+	debug_printf("[Desktop]{K__RebuildClippingForAllWindows}debug after Exclude()\n");
+	debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
+	debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+	for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) {
+	debug_printf("[Desktop]{K__RebuildClippingForAllWindows} inside loop2 i=%d\n",i);
+		clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+	//end
+		}
+	}
+
+//BRegion* stillAvailableOnScreen2 = fScreenRegion;
+// set clipping of each window
+	for (Window* window = CurrentWindows().LastWindow(); window != NULL;
+			window = window->PreviousWindow(fCurrentWorkspace)) {
+		if (!window->IsHidden()) {
+			window->SetClipping(&stillAvailableOnScreen);
+			window->SetScreen(_DetermineScreenFor(window->Frame()));
+
+			if (window->ServerWindow()->IsDirectlyAccessing()) {
+				window->ServerWindow()->HandleDirectConnection(
+					B_DIRECT_MODIFY | B_CLIPPING_MODIFIED);
+			}
+
+			// that windows region is not available on screen anymore
+			stillAvailableOnScreen.Exclude(&window->VisibleRegion());
+			
+			//khidki start
+	debug_printf("[Desktop]{K__RebuildClippingForAllWindows} in old Window debug Exclude()\n");
+	debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
+	debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+	for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) {
+	debug_printf("[Desktop]{K__RebuildClippingForAllWindows} inside loop2 i=%d\n",i);
+		clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+	//end
+		}
+	}
+
+clip_bounds = stillAvailableOnScreen.get_Bounds();
+clip_data = stillAvailableOnScreen.get_Data();
+
+debug_printf("[Desktop]{K_RebuildClippingForAllWindows} dump clipping\n");
+debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
+debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+
+debug_printf("stillAvailableOnScreen.fBounds.left=%d\n",clip_bounds.left);
+debug_printf("stillAvailableOnScreen.fBounds.top=%d\n",clip_bounds.top);
+debug_printf("stillAvailableOnScreen.fBounds.right=%d\n",clip_bounds.right);
+debug_printf("stillAvailableOnScreen.fBounds.bottom=%d\n",clip_bounds.bottom);
+
+debug_printf("stillAvailableOnScreen.fData->left=%d\n",clip_data->left);
+debug_printf("stillAvailableOnScreen.fData->top=%d\n",clip_data->top);
+debug_printf("stillAvailableOnScreen.fData->right=%d\n",clip_data->right);
+debug_printf("stillAvailableOnScreen.fData->bottom=%d\n",clip_data->bottom);
+
+
+//khidki start
+	debug_printf("[Desktop]{K__RebuildClippingForAllWindows}debug before ending K_RebuildClippingForAllWindow()\n");
+	debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
+	debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+	for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) {
+	debug_printf("[Desktop]{K__RebuildClippingForAllWindows} inside loop2 i=%d\n",i);
+		clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+	//end
+
+
+debug_printf("[Desktop]{K_RebuildClippingForAllWindows}ends\n");
+}
+//end
 
 
 void
 Desktop::_TriggerWindowRedrawing(BRegion& newDirtyRegion)
 {
+
+//mak custom start
+//khidki start
+	debug_printf("[Desktop]{_TriggerWindowRedrawing}debug newDirtyRegion beta\n");
+	debug_printf("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount());
+	debug_printf("newDirtyRegion.fDataSize=%d\n",newDirtyRegion.FDataSize());
+	for (int32 i = 0; i < newDirtyRegion.FCount(); i++) {
+	debug_printf("[Desktop]{_TriggerWindowRedrawing} inside loop2 i=%d\n",i);
+		clipping_rect *rect = newDirtyRegion.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+	//end
+int i = 0;
+// send redraw messages to all windows intersecting the dirty region
+	for (K_Window* window = K_CurrentWindows().LastWindow(); window != NULL;
+			window = window->PreviousWindow(fCurrentWorkspace))
+	{i++;
+	debug_printf("[Desktop]{_TriggerWindowRedrawing}i=%d\n",i);
+	debug_printf("newDirtyRegion.Intersects(window->VisibleRegion().Frame())=%d\n",newDirtyRegion.Intersects(window->VisibleRegion().Frame()));//false
+		if (!window->IsHidden()
+			&& newDirtyRegion.Intersects(window->VisibleRegion().Frame()))
+		{//not executed
+		debug_printf("[Desktop]{_TriggerWindowRedrawing}K_Window before window->ProcessDrtyRegion()\n");
+			window->ProcessDirtyRegion(newDirtyRegion);
+		}
+	}
+
+//end
+
 	// send redraw messages to all windows intersecting the dirty region
+	for (Window* window = CurrentWindows().LastWindow(); window != NULL;
+			window = window->PreviousWindow(fCurrentWorkspace)) {
+		if (!window->IsHidden()
+			&& newDirtyRegion.Intersects(window->VisibleRegion().Frame()))
+			{
+				i++;
+				window->ProcessDirtyRegion(newDirtyRegion);
+			}
+	}
+}
+
+
+//khidki start
+void
+Desktop::K__TriggerWindowRedrawing(BRegion& newDirtyRegion)
+{
+debug_printf("[Desktop]{K__TriggerWindowRedrawing}\n");
+
+//mak custom start
+
+// send redraw messages to all windows intersecting the dirty region
+	for (Window* window = CurrentWindows().LastWindow(); window != NULL;
+			window = window->PreviousWindow(fCurrentWorkspace)) {
+		if (!window->IsHidden()
+			&& newDirtyRegion.Intersects(window->VisibleRegion().Frame()))
+		{
+		debug_printf("[Desktop]{K__TriggerWindowRedrawing}for Window before window->ProcessDirtyRegion()\n");
+
+			window->ProcessDirtyRegion(newDirtyRegion);
+
+			debug_printf("[Desktop]{K__TriggerWindowRedrawing} dumping after processing newDirtyRegion from BWindow\n");
+			debug_printf("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount());
+			debug_printf("newDirtyRegion.fDataSize=%d\n", newDirtyRegion.FDataSize());
+			for (int32 i = 0; i < newDirtyRegion.FCount(); i++) 
+			{
+			debug_printf("[Desktop]{K__TriggerWindowRedrawing} inside loop i=%d\n",i);
+			clipping_rect *rect = newDirtyRegion.get_DataArray(i);//fData[i];
+			debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			}
+		}
+	}
+//end
+	debug_printf("[Desktop]{K__TriggerWindowRedrawing} dumping after processing newDirtyRegion after BWindow before KWindow\n");
+	debug_printf("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount());
+	debug_printf("newDirtyRegion.fDataSize=%d\n", newDirtyRegion.FDataSize());
+	for (int32 i = 0; i < newDirtyRegion.FCount(); i++) 
+	{
+		debug_printf("[Desktop]{K__TriggerWindowRedrawing} inside loop i=%d\n",i);
+		clipping_rect *rect = newDirtyRegion.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+
+
+
+	// send redraw messages to all windows intersecting the dirty region
+	for (K_Window* window = K_CurrentWindows().LastWindow(); window != NULL;
+			window = window->PreviousWindow(fCurrentWorkspace)) {
+		if (!window->IsHidden()
+			&& newDirtyRegion.Intersects(window->VisibleRegion().Frame()))
+			{
+			debug_printf("[Desktop]{K__TriggerWindowRedrawing}for K_Window before window->ProcessDirtyRegion()\n");
+			window->ProcessDirtyRegion(newDirtyRegion);
+
+			debug_printf("[Desktop]{K__TriggerWindowRedrawing} dumping after processing newDirtyRegion from KWindow");
+			debug_printf("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount());
+			debug_printf("newDirtyRegion.fDataSize=%d\n", newDirtyRegion.FDataSize());
+			for (int32 i = 0; i < newDirtyRegion.FCount(); i++) 
+			{
+			debug_printf("[Desktop]{K__TriggerWindowRedrawing} inside loop i=%d\n",i);
+			clipping_rect *rect = newDirtyRegion.get_DataArray(i);//fData[i];
+			debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			}
+			}
+	}
+
+
+//mak custom start
+/*
+// send redraw messages to all windows intersecting the dirty region
 	for (Window* window = CurrentWindows().LastWindow(); window != NULL;
 			window = window->PreviousWindow(fCurrentWorkspace)) {
 		if (!window->IsHidden()
 			&& newDirtyRegion.Intersects(window->VisibleRegion().Frame()))
 			window->ProcessDirtyRegion(newDirtyRegion);
 	}
+//end
+*/
+
+
+	debug_printf("[Desktop]{K__TriggerWindowRedrawing} dumping after processing newDirtyRegion final dump");
+	debug_printf("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount());
+	debug_printf("newDirtyRegion.fDataSize=%d\n", newDirtyRegion.FDataSize());
+	for (int32 i = 0; i < newDirtyRegion.FCount(); i++) 
+	{
+		debug_printf("[Desktop]{K__TriggerWindowRedrawing} inside loop i=%d\n",i);
+		clipping_rect *rect = newDirtyRegion.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+
+debug_printf("[Desktop]{K__TriggerWindowRedrawing}ends\n");
 }
+//end
 
 
+const rgb_color desktop_bckgrnd_col={64,64,64,255};//set the desktop background color
 void
 Desktop::_SetBackground(BRegion& background)
 {
@@ -3492,6 +7000,32 @@ Desktop::_SetBackground(BRegion& background)
 }
 
 
+//! change the background with particular col...
+void
+Desktop::_SetBackground(BRegion& background, rgb_color col)
+{
+	// NOTE: the drawing operation is caried out
+	// in the clipping region rebuild, but it is
+	// ok actually, because it also avoids trails on
+	// moving windows
+
+	// remember the region not covered by any windows
+	// and redraw the dirty background
+	BRegion dirtyBackground(background);
+	dirtyBackground.Exclude(&fBackgroundRegion);
+	dirtyBackground.IntersectWith(&background);
+	fBackgroundRegion = background;
+	if (dirtyBackground.Frame().IsValid()) {
+		if (GetDrawingEngine()->LockParallelAccess()) {
+			GetDrawingEngine()->FillRegion(dirtyBackground,
+				col);//fWorkspaces[fCurrentWorkspace].Color());
+
+			GetDrawingEngine()->UnlockParallelAccess();
+		}
+	}
+}
+
+
 //!	The all window lock must be held when calling this function.
 void
 Desktop::RebuildAndRedrawAfterWindowChange(Window* changedWindow,
@@ -3507,6 +7041,58 @@ Desktop::RebuildAndRedrawAfterWindowChange(Window* changedWindow,
 
 	// figure out what the entire screen area is
 	BRegion stillAvailableOnScreen(fScreenRegion);
+	
+//mak custom start
+// set clipping of each window [to be tested]
+	for (K_Window* window = K_CurrentWindows().LastWindow(); window != NULL;
+			window = window->PreviousWindow(fCurrentWorkspace)) {
+		if (!window->IsHidden()) {
+		debug_printf("[Desktop]{RebuildAndRedrawAfterWindowChange} K_Window loop\n");
+			//if (window == changedWindow)
+			//	dirty.IntersectWith(&stillAvailableOnScreen);
+
+			window->SetClipping(&stillAvailableOnScreen);
+			
+			//khidki start
+	debug_printf("[Desktop]{RebuildAndRedrawAfterWindowChange} debug stillAvailableOnScreen after SetClipping in K_Window\n");
+	debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
+	debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+	for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) {
+	debug_printf("[Desktop]{RebuildAndRedrawAfterWindowChange} inside loop i=%d\n",i);
+		clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+//end
+
+			
+			window->SetScreen(_DetermineScreenFor(window->Frame()));
+
+			if (window->KServerWindow()->IsDirectlyAccessing()) {
+				window->KServerWindow()->HandleDirectConnection(
+					B_DIRECT_MODIFY | B_CLIPPING_MODIFIED);
+			}
+
+			// that windows region is not available on screen anymore
+			stillAvailableOnScreen.Exclude(&window->VisibleRegion());
+			
+			//khidki start
+	debug_printf("[Desktop]{RebuildAndRedrawAfterWindowChange} debug stillAvailableOnScreen after exclude in K_Window\n");
+	debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
+	debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+	for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) {
+	debug_printf("[Desktop]{RebuildAndRedrawAfterWindowChange} inside loop i=%d\n",i);
+		clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+//end
+
+		}
+	}
+//end
 
 	// set clipping of each window
 	for (Window* window = CurrentWindows().LastWindow(); window != NULL;
@@ -3533,6 +7119,77 @@ Desktop::RebuildAndRedrawAfterWindowChange(Window* changedWindow,
 
 	_TriggerWindowRedrawing(dirty);
 }
+
+
+//khidki start
+//!	The all window lock must be held when calling this function.
+void
+Desktop::K_RebuildAndRedrawAfterWindowChange(K_Window* changedWindow,
+	BRegion& dirty)
+{
+debug_printf("[Desktop]{K_RebuildAndRedrawAfterWindowChange}\n");
+
+	ASSERT_MULTI_WRITE_LOCKED(fWindowLock);
+	if (!changedWindow->IsVisible() || dirty.CountRects() == 0){
+	debug_printf("[Desktop]{K_RebuildAndRedrawAfterWindowChange} either window is not visible or dirty countrects =0\n");
+		return;
+	}
+
+	// The following loop is pretty much a copy of
+	// _RebuildClippingForAllWindows(), but will also
+	// take care about restricting our dirty region.
+
+	// figure out what the entire screen area is
+	BRegion stillAvailableOnScreen(fScreenRegion);
+
+//mak custom start [to be tested]
+// set clipping of each window
+	for (Window* window = CurrentWindows().LastWindow(); window != NULL;
+			window = window->PreviousWindow(fCurrentWorkspace)) {
+		if (!window->IsHidden()) {
+			//if (window == changedWindow)
+			//	dirty.IntersectWith(&stillAvailableOnScreen);
+
+			window->SetClipping(&stillAvailableOnScreen);
+			window->SetScreen(_DetermineScreenFor(window->Frame()));
+
+			if (window->ServerWindow()->IsDirectlyAccessing()) {
+				window->ServerWindow()->HandleDirectConnection(
+					B_DIRECT_MODIFY | B_CLIPPING_MODIFIED);
+			}
+
+			// that windows region is not available on screen anymore
+			stillAvailableOnScreen.Exclude(&window->VisibleRegion());
+		}
+	}
+//end
+
+	// set clipping of each window
+	for (K_Window* window = K_CurrentWindows().LastWindow(); window != NULL;
+			window = window->PreviousWindow(fCurrentWorkspace)) {
+		if (!window->IsHidden()) {
+			if (window == changedWindow)
+				dirty.IntersectWith(&stillAvailableOnScreen);
+
+			window->SetClipping(&stillAvailableOnScreen);
+			window->SetScreen(_DetermineScreenFor(window->Frame()));
+
+			if (window->KServerWindow()->IsDirectlyAccessing()) {
+				window->KServerWindow()->HandleDirectConnection(
+					B_DIRECT_MODIFY | B_CLIPPING_MODIFIED);
+			}
+
+			// that windows region is not available on screen anymore
+			stillAvailableOnScreen.Exclude(&window->VisibleRegion());
+		}
+	}
+
+	_SetBackground(stillAvailableOnScreen);
+	K__WindowChanged(changedWindow);
+
+	K__TriggerWindowRedrawing(dirty);
+}
+//end
 
 
 //! Suspend all windows with direct access to the frame buffer

@@ -15,6 +15,7 @@
 
 class Screen;
 class Window;
+class K_Window;//khidki
 
 
 class MagneticBorder {
@@ -23,6 +24,10 @@ public:
 
 			bool				AlterDeltaForSnap(Window* window, BPoint& delta,
 									bigtime_t now);
+//khidki start
+bool	K_AlterDeltaForSnap(K_Window* window, BPoint& delta, bigtime_t now);
+//end
+
 			bool				AlterDeltaForSnap(const Screen* screen,
 									BRect& frame, BPoint& delta, bigtime_t now);
 

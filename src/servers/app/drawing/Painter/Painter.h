@@ -355,6 +355,13 @@ private:
 	// it is setup to load from a specific Freetype supported
 	// font file which it gets from ServerFont
 	mutable	AGGTextRenderer		fTextRenderer;
+
+public://mak
+RenderingBuffer *fRenderingBuffer;//mak
+void* fb_addr();//mak
+int get_width();//mak
+int get_height();//mak
+void* addr;//mak
 };
 
 

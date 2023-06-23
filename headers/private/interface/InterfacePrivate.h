@@ -27,6 +27,7 @@ void		get_workspaces_layout(uint32* _columns, uint32* _rows);
 void		set_workspaces_layout(uint32 columns, uint32 rows);
 
 bool		get_control_look(BString& path);
+bool		k_get_control_look(BString& path);//khidki
 status_t	set_control_look(const BString& path);
 
 }	// namespace BPrivate

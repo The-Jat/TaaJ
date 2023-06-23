@@ -18,10 +18,23 @@
 #include "Desktop.h"
 #include "WorkspacePrivate.h"
 #include "Window.h"
+#include "KWindow.h"//khidki
+
+//khidki code
+//start
+//#define TRACE_DEBUG_SERVER
+#ifdef TRACE_DEBUG_SERVER
+#	define TTRACE(x) debug_printf x
+#else
+#	define TTRACE(x) ;
+#endif
+//end
+
+#define DEBUG_WORKSPACE //khidki for debugging
 
 
-static rgb_color kDefaultColor = (rgb_color){ 51, 102, 152, 255 };
-
+//static rgb_color kDefaultColor = (rgb_color){ 51, 102, 152, 255 };//color testing
+static rgb_color kDefaultColor = (rgb_color){ 100, 102, 104, 255 };//the default desktop color after so many attempts finally found it and it worked...
 
 Workspace::Private::Private()
 {
@@ -138,6 +151,37 @@ Workspace::GetNextWindow(Window*& _window, BPoint& _leftTop)
 }
 
 
+//khidki start
+status_t
+Workspace::K_GetNextWindow(K_Window*& _window, BPoint& _leftTop)
+{
+#ifdef DEBUG_WORKSPACE
+	debug_printf("[Workspace]{K_GetNextWindow}\n");
+#endif
+
+	if (k_fCurrent == NULL)
+		k_fCurrent = fWorkspace.K_Windows().FirstWindow();
+	else
+		k_fCurrent = k_fCurrent->NextWindow(fWorkspace.Index());
+
+	if (k_fCurrent == NULL)
+		return B_ENTRY_NOT_FOUND;
+
+	_window = k_fCurrent;
+
+	if (fCurrentWorkspace)
+		_leftTop = k_fCurrent->Frame().LeftTop();
+	else
+		_leftTop = k_fCurrent->Anchor(fWorkspace.Index()).position;
+
+#ifdef DEBUG_WORKSPACE
+	debug_printf("[Workspace]{K_GetNextWindow}Returning B_OK\n");
+#endif
+	return B_OK;
+}
+//end
+
+
 status_t
 Workspace::GetPreviousWindow(Window*& _window, BPoint& _leftTop)
 {
@@ -158,6 +202,37 @@ Workspace::GetPreviousWindow(Window*& _window, BPoint& _leftTop)
 
 	return B_OK;
 }
+
+
+//khidki start
+status_t
+Workspace::K_GetPreviousWindow(K_Window*& _window, BPoint& _leftTop)
+{
+#ifdef DEBUG_WORKSPACE
+	debug_printf("[Workspace]{K_GetPreviousWindow}\n");
+#endif
+
+	if (k_fCurrent == NULL)
+		k_fCurrent = fWorkspace.K_Windows().LastWindow();
+	else
+		k_fCurrent = k_fCurrent->PreviousWindow(fWorkspace.Index());
+
+	if (k_fCurrent == NULL)
+		return B_ENTRY_NOT_FOUND;
+
+	_window = k_fCurrent;
+
+	if (fCurrentWorkspace)
+		_leftTop = k_fCurrent->Frame().LeftTop();
+	else
+		_leftTop = k_fCurrent->Anchor(fWorkspace.Index()).position;
+
+#ifdef DEBUG_WORKSPACE
+	debug_printf("[Workspace]{K_GetPreviousWindow}returning B_OK\n");
+#endif
+	return B_OK;
+}
+//end
 
 
 void

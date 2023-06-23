@@ -6,6 +6,7 @@
 #include <ControlLook.h>
 
 #include <algorithm>
+#include <KLayout.h> //khidki
 #include <binary_compatibility/Interface.h>
 
 

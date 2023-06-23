@@ -32,6 +32,7 @@
 #include <MessageFilter.h>
 #include <Window.h>
 
+#include <KLayout.h> //khidki
 #include <binary_compatibility/Interface.h>
 #include <binary_compatibility/Support.h>
 

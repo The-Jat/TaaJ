@@ -51,6 +51,16 @@
 #	define STRACE(x) ;
 #endif
 
+//khidki code
+//start
+//#define TRACE_DEBUG_SERVER
+#ifdef TRACE_DEBUG_SERVER
+#	define TTRACE(x) debug_printf x
+#else
+#	define TTRACE(x) ;
+#endif
+//end
+
 
 static inline uint8
 blend_color_value(uint8 a, uint8 b, float position)
@@ -76,6 +86,7 @@ DefaultDecorator::DefaultDecorator(DesktopSettings& settings, BRect rect,
 	:
 	TabDecorator(settings, rect, desktop)
 {
+debug_printf("[DefaultDecorator]{ DefaultDecorator}...\n");
 	// TODO: If the decorator was created with a frame too small, it should
 	// resize itself!
 

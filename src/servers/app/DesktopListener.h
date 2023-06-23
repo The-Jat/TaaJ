@@ -15,11 +15,13 @@
 
 #include <ServerLink.h>
 #include "Window.h"
+#include "KWindow.h"//khdiki
 
 
 class BMessage;
 class Desktop;
 class Window;
+class K_Window;//khdiki
 
 
 class DesktopListener : public DoublyLinkedListLinkImpl<DesktopListener> {

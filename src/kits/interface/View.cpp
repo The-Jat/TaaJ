@@ -51,6 +51,7 @@
 
 #include <AppMisc.h>
 #include <AppServerLink.h>
+#include <KLayout.h> //khidki
 #include <binary_compatibility/Interface.h>
 #include <binary_compatibility/Support.h>
 #include <MessagePrivate.h>

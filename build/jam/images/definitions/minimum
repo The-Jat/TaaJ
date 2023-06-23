@@ -45,6 +45,7 @@ SYSTEM_APPS = [ FFilterByBuildFeatures
 	ShowImage StyledEdit
 	Terminal TextSearch
 	Workspaces
+	tst
 ] ;
 
 DESKBAR_APPLICATIONS =

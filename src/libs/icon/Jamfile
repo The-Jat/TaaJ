@@ -69,6 +69,9 @@ for architectureObject in [ MultiArchSubDirSetup ] {
 			Icon.cpp
 			IconRenderer.cpp
 			IconUtils.cpp
+			
+			# khidki
+			KIconUtils.cpp
 			;
 	}
 }

@@ -42,6 +42,7 @@
 
 #include <AppServerLink.h>
 #include <AutoDeleter.h>
+#include <KLayout.h> //khidki
 #include <binary_compatibility/Interface.h>
 #include <BMCPrivate.h>
 #include <MenuPrivate.h>

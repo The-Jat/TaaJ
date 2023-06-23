@@ -37,6 +37,7 @@ public:
 
 private:
 	friend class BView;
+	friend class KView;//khidki
 
 			bool				_AddPoints(const BPoint* points, int32 count,
 									bool computeBounds);

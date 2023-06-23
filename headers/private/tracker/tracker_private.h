@@ -40,6 +40,7 @@ All rights reserved.
 #define kTrackerSignature "application/x-vnd.Be-TRAK"
 #define kTrackerSuites "suite/x-vnd.Be-TRAK"
 #define kDeskbarSignature "application/x-vnd.Be-TSKB"
+#define k_kDeskbarSignature "application/x-vnd.Be-KRYB"//khidki
 
 namespace BPrivate {
 
@@ -47,6 +48,8 @@ namespace BPrivate {
 _IMPEXP_TRACKER
 #endif
 void InitIconPreloader();
+
+void K_InitIconPreloader();//khidki
 
 // commands that may be issued to the tracker by other apps using messengers
 

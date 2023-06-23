@@ -20,6 +20,7 @@ struct color_map;
 class BBitmap;
 class BApplication;
 class BWindow;
+class KWindow;//khidki
 
 
 #define B_CURRENT_WORKSPACE_INDEX	(~0L)
@@ -33,6 +34,9 @@ public:
 	// Get() and Put() instead.
 
 	static	BPrivateScreen*		Get(BWindow* window);
+	
+	static	BPrivateScreen*		K_Get(KWindow* window); // khidki
+	
 	static	BPrivateScreen*		Get(int32 id);
 	static	void				Put(BPrivateScreen* screen);
 

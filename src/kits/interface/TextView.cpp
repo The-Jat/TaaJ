@@ -51,6 +51,7 @@
 #include <SystemCatalog.h>
 #include <Window.h>
 
+#include <KLayout.h> //khidki
 #include <binary_compatibility/Interface.h>
 
 #include "InlineInput.h"

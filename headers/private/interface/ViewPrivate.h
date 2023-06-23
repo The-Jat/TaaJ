@@ -18,6 +18,7 @@
 #include <ServerProtocolStructs.h>
 #include <View.h>
 
+#include <Laminate.h>
 
 const static uint32 kDeleteReplicant = 'JAHA';
 
@@ -83,6 +84,34 @@ private:
 			BView* fView;
 };
 
+//khidki start
+class KView::KPrivate {
+public:
+								KPrivate(KView* view)
+									:
+									fView(view)
+								{
+								}
+
+			int16				ShowLevel()
+									{ return fView->fShowLevel; }
+
+			// defined in View.cpp
+			bool				WillLayout();
+			bool				MinMaxValid();
+
+			KLayoutItem*		LayoutItemAt(int32 index);
+			int32				CountLayoutItems();
+			void				RegisterLayoutItem(KLayoutItem* item);
+			void				DeregisterLayoutItem(KLayoutItem* item);
+
+			bool				RemoveSelf()
+									{ return fView->_RemoveSelf(); }
+
+private:
+			KView* fView;
+};
+//end
 
 namespace BPrivate {
 
@@ -178,6 +207,93 @@ ViewState::IsAllValid() const
 	return (valid_flags & B_VIEW_ALL_BITS & ~B_VIEW_CLIP_REGION_BIT)
 		== (B_VIEW_ALL_BITS & ~B_VIEW_CLIP_REGION_BIT);
 }
+
+//khidki start
+
+class KViewState {
+	public:
+		KViewState();
+
+		inline bool IsValid(uint32 bit) const;
+		inline bool IsAllValid() const;
+
+		void UpdateServerFontState(BPrivate::PortLink &link);
+		void UpdateServerState(BPrivate::PortLink &link);
+
+		void UpdateFrom(BPrivate::PortLink &link);
+
+	public:
+		BPoint				pen_location;
+		float				pen_size;
+
+		rgb_color			high_color;
+		rgb_color			low_color;
+
+		// This one is not affected by pop state/push state
+		rgb_color			view_color;
+		color_which			which_view_color;
+		float				which_view_color_tint;
+
+		// these are cached values
+		color_which			which_low_color;
+		float				which_low_color_tint;
+
+		color_which			which_high_color;
+		float				which_high_color_tint;
+
+		::pattern			pattern;
+
+		::drawing_mode		drawing_mode;
+		BRegion				clipping_region;
+		bool				clipping_region_used;
+
+		// transformation
+		BPoint				origin;
+		float				scale;
+		BAffineTransform	transform;
+
+		// line modes
+		join_mode			line_join;
+		cap_mode			line_cap;
+		float				miter_limit;
+
+		// fill rule
+		int32				fill_rule;
+
+		// alpha blending
+		source_alpha		alpha_source_mode;
+		alpha_function		alpha_function_mode;
+
+		// fonts
+		BFont				font;
+		uint16				font_flags;
+		bool				font_aliasing;
+			// font aliasing. Used for printing only!
+
+		// flags used for synchronization with app_server
+		uint32				valid_flags;
+		// flags used for archiving
+		uint32				archiving_flags;
+
+		// maintain our own rect as seen from the app while printing
+		BRect				print_rect;
+};
+
+
+inline bool
+KViewState::IsValid(uint32 bit) const
+{
+	return valid_flags & bit;
+}
+
+
+inline bool
+KViewState::IsAllValid() const
+{
+	return (valid_flags & B_VIEW_ALL_BITS & ~B_VIEW_CLIP_REGION_BIT)
+		== (B_VIEW_ALL_BITS & ~B_VIEW_CLIP_REGION_BIT);
+}
+//end
 
 
 }	// namespace BPrivate
