@@ -252,15 +252,20 @@ void
 Decorator::SetFlags(int32 tab, uint32 flags, BRegion* updateRegion)
 {
 debug_printf("[Decorator]{ SetFlags}...\n");
+debug_printf("[Decorator]{ SetFlags} tab = %d\n", tab);
 	AutoWriteLocker _(fLocker);
 
 	// we're nice to our subclasses - we make sure B_NOT_{H|V|}_RESIZABLE
 	// are in sync (it's only a semantical simplification, not a necessity)
 	if ((flags & (B_NOT_H_RESIZABLE | B_NOT_V_RESIZABLE))
-			== (B_NOT_H_RESIZABLE | B_NOT_V_RESIZABLE))
+			== (B_NOT_H_RESIZABLE | B_NOT_V_RESIZABLE)){
+		debug_printf("[Decorator] {SetFlags} B_NOT_H_RESIZABLE | B_NOT_V_RESIZABLE.\n");
 		flags |= B_NOT_RESIZABLE;
-	if (flags & B_NOT_RESIZABLE)
+	}
+	if (flags & B_NOT_RESIZABLE){
+		debug_printf("[Decorator]{ SetFlags} B_NOT_RESIZABLE\n");
 		flags |= B_NOT_H_RESIZABLE | B_NOT_V_RESIZABLE;
+	}
 
 	Decorator::Tab* decoratorTab = fTabList.ItemAt(tab);
 	if (decoratorTab == NULL)
@@ -577,9 +582,11 @@ Decorator::IsFocus(Decorator::Tab* tab) const
 const BRegion&
 Decorator::GetFootprint()
 {
+debug_printf("[Decorator] {GetFootprint}...\n");
 	AutoReadLocker _(fLocker);
 
 	if (!fFootprintValid) {
+	debug_printf("[Decorator]{GetFootprint} fFootprintValid not set.\n");
 		fFootprint.MakeEmpty();
 
 		_GetFootprint(&fFootprint);
@@ -589,6 +596,7 @@ Decorator::GetFootprint()
 
 		fFootprintValid = true;
 	}
+	debug_printf("[Decorator]{GetFootprint} return fFootprint\n");
 
 	return fFootprint;
 }

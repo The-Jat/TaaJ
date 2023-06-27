@@ -414,11 +414,19 @@ MouseFilter::Filter(BMessage* message, EventTarget** _target, int32* _viewToken,
 //end
 
 	if (window != NULL) {
+		debug_printf("[MouseFilter]{Filter}window != NULL\n");
 		// dispatch event to the window
 		switch (message->what) {
 			case B_MOUSE_DOWN:
 			{
+			//#ifdef TESTING
+			debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN\n");
+			//#endif
 				int32 windowToken = window->ServerWindow()->ServerToken();
+//#ifdef TESTING
+debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN windowToken=%d\n",windowToken);
+//#endif
+				//int32 windowToken1 = window1->KServerWindow()->ServerToken();//khidki
 
 				// First approximation of click count validation. We reset the
 				// click count when modifiers or pressed buttons have changed
@@ -433,22 +441,40 @@ MouseFilter::Filter(BMessage* message, EventTarget** _target, int32* _viewToken,
 					originalClickCount = 1;
 
 				int32 clickCount = originalClickCount;
+//int32 clickCount1 = originalClickCount;//khidki
 				if (clickCount > 1) {
+					//#ifdef TESTING
+					debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN clickCount>1\n");
+					//#endif
 					if (modifiers != fLastClickModifiers
 						|| buttons != fLastClickButtons
 						|| !fLastClickTarget.IsValid()
 						|| fLastClickTarget.WindowToken() != windowToken
 						|| square_distance(where, fLastClickPoint) >= 16
 						|| clickCount - fResetClickCount < 1) {
+						debug_printf("[MouseFilter]{Filter}clickCount=1\n");
 						clickCount = 1;
 					} else
 						clickCount -= fResetClickCount;
 				}
 
+				//#ifdef TESTING
+				debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN after if \n");
+				//#endif
 				// notify the window
 				ClickTarget clickTarget;
 				window->MouseDown(message, where, fLastClickTarget, clickCount,
 					clickTarget);
+
+//khidki start
+/*
+debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN khidki start\n");
+	ClickTarget clickTarget1;
+debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN khidki after clickTarget1\n");
+window1->MouseDown(message, where, k_fLastClickTarget, clickCount1,
+					clickTarget1);
+
+*///end
 
 				// If the click target changed, always reset the click count.
 				if (clickCount != 1 && clickTarget != fLastClickTarget)
@@ -486,6 +512,9 @@ MouseFilter::Filter(BMessage* message, EventTarget** _target, int32* _viewToken,
 				break;
 
 			case B_MOUSE_MOVED:
+				//#ifdef TESTING
+				debug_printf("[MouseFilter]{Filter}B_MOUSE_MOVED\n");
+				//#endif
 				window->MouseMoved(message, where, &viewToken,
 					latestMouseMoved == NULL || latestMouseMoved == message,
 					false);
@@ -494,12 +523,157 @@ MouseFilter::Filter(BMessage* message, EventTarget** _target, int32* _viewToken,
 		}
 
 		if (viewToken != B_NULL_TOKEN) {
+			//#ifdef TESTING
+			debug_printf("[MouseFilter]{Filter}viewToken != B_NULL_TOKEN\n");
+			//#endif
 			fDesktop->SetViewUnderMouse(window, viewToken);
 
 			*_viewToken = viewToken;
 			*_target = &window->EventTarget();
 		}
-	} else if (message->what == B_MOUSE_DOWN) {
+	} /*else if (message->what == B_MOUSE_DOWN) {
+		//#ifdef TESTING
+		debug_printf("[MouseFilter]{Filter} message-> what == B_MOUSE_DOWN\n");
+		//#endif
+		// the mouse-down didn't hit a window -- reset the click target
+		fResetClickCount = 0;
+		fLastClickTarget = ClickTarget();
+		fLastClickButtons = message->FindInt32("buttons");
+		fLastClickModifiers = message->FindInt32("modifiers");
+		fLastClickPoint = where;
+	}*/
+	// Khidki start
+	else if ( window1 != NULL) {
+		//#ifdef TESTING
+		debug_printf("[MouseFilter]{Filter} window1 != NULL\n");
+		//#endif
+		// dispatch event to the window
+		switch (message->what) {
+			case B_MOUSE_DOWN:
+			{
+			//#ifdef TESTING
+			debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2\n");
+			//#endif
+
+				//int32 windowToken = window->ServerWindow()->ServerToken();
+
+				int32 windowToken = window1->KServerWindow()->ServerToken();//khidki
+//#ifdef TESTING
+debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 windowToken1\n");
+//#endif
+				// First approximation of click count validation. We reset the
+				// click count when modifiers or pressed buttons have changed
+				// or when we've got a different click target, or when the
+				// previous click location is too far from the new one. We can
+				// only check the window of the click target here; we'll recheck
+				// after asking the window.
+				int32 modifiers = message->FindInt32("modifiers");
+
+				int32 originalClickCount = message->FindInt32("clicks");
+				if (originalClickCount <= 0)
+					originalClickCount = 1;
+
+				int32 clickCount = originalClickCount;
+//int32 clickCount1 = originalClickCount;//khidki
+				if (clickCount > 1) {
+				//#ifdef TESTING
+				debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 clickCount>1\n");
+				//#endif
+					if (modifiers != fLastClickModifiers
+						|| buttons != fLastClickButtons
+						|| !k_fLastClickTarget.IsValid()
+						|| k_fLastClickTarget.WindowToken() != windowToken
+		//|| k_fLastClickTarget.WindowToken() != windowToken1//khidki
+						|| square_distance(where, fLastClickPoint) >= 16
+						|| clickCount - fResetClickCount < 1) {
+						debug_printf("[MouseFilter]{Filter}clickCount=1\n");
+						clickCount = 1;
+					} else
+						clickCount -= fResetClickCount;
+				}
+				
+				//#ifdef TESTING
+				debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 after if \n");
+				//#endif
+				// notify the window
+				/*ClickTarget clickTarget;
+				window->MouseDown(message, where, fLastClickTarget, clickCount,
+					clickTarget);*/
+
+//khidki start
+//#ifdef TESTING
+debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 khidki start\n");
+//#endif
+	ClickTarget clickTarget;
+//#ifdef TESTING
+debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 khidki after clickTarget1\n");
+//#endif
+window1->MouseDown(message, where, k_fLastClickTarget, clickCount,
+					clickTarget);
+debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 after window1->MouseDown\n");
+//debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 k_fLastClickTarget = %d\n",k_fLastClickTarget);
+debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 clickCount=%d\n",clickCount);
+//end
+
+				// If the click target changed, always reset the click count.
+				if (clickCount != 1 && clickTarget != k_fLastClickTarget)
+					clickCount = 1;
+
+				// update our click count management attributes
+				fResetClickCount = originalClickCount - clickCount;
+				k_fLastClickTarget = clickTarget;
+				fLastClickButtons = buttons;
+				fLastClickModifiers = modifiers;
+				fLastClickPoint = where;
+
+				// get the view token from the click target
+				if (clickTarget.GetType() == ClickTarget::TYPE_WINDOW_CONTENTS)
+					viewToken = clickTarget.WindowElement();
+
+				// update the message's "clicks" field, if necessary
+				if (clickCount != originalClickCount) {
+					if (message->HasInt32("clicks"))
+						message->ReplaceInt32("clicks", clickCount);
+					else
+						message->AddInt32("clicks", clickCount);
+				}
+
+				// notify desktop listeners
+				//fDesktop->NotifyMouseDown(window, message, where);
+
+fDesktop->K_NotifyMouseDown(window1, message, where);//khidki
+				break;
+			}
+
+			case B_MOUSE_UP:
+				debug_printf("[MouseFilter]{Filter}B_MOUSE_UP2\n");
+				window1->MouseUp(message, where, &viewToken);
+				if (buttons == 0)
+					fDesktop->K_SetMouseEventWindow(NULL);
+				fDesktop->K_NotifyMouseUp(window1, message, where);
+				break;
+
+			case B_MOUSE_MOVED:
+				//#ifdef TESTING
+				debug_printf("[MouseFilter]{Filter}B_MOUSE_MOVED2\n");
+				//#endif
+				window1->MouseMoved(message, where, &viewToken,
+					latestMouseMoved == NULL || latestMouseMoved == message,
+					false);
+				fDesktop->K_NotifyMouseMoved(window1, message, where);
+				break;
+		}
+
+		if (viewToken != B_NULL_TOKEN) {
+			fDesktop->K_SetViewUnderMouse(window1, viewToken);
+
+			*_viewToken = viewToken;
+			*_target = &window1->EventTarget();
+		}
+	}else if (message->what == B_MOUSE_DOWN) {
+		//#ifdef TESTING
+		debug_printf("[MouseFilter]{Filter} message-> what == B_MOUSE_DOWN\n");
+		//#endif
 		// the mouse-down didn't hit a window -- reset the click target
 		fResetClickCount = 0;
 		fLastClickTarget = ClickTarget();
@@ -507,8 +681,17 @@ MouseFilter::Filter(BMessage* message, EventTarget** _target, int32* _viewToken,
 		fLastClickModifiers = message->FindInt32("modifiers");
 		fLastClickPoint = where;
 	}
+	
+	
+	//end
+	
+	// original code from here.
 
-	if (window == NULL || viewToken == B_NULL_TOKEN) {
+//original (window == NULL || viewToken == B_NULL_TOKEN)
+	if ((window == NULL || window1 == NULL) && viewToken == B_NULL_TOKEN) {
+		//#ifdef TESTING
+		debug_printf("[MouseFilter]{Filter} (window==NULL || window1==NULL) && viewToken==B_NULL_TOKEN\n");
+		//#endif
 		// mouse is not over a window or over a decorator
 		fDesktop->SetViewUnderMouse(window, B_NULL_TOKEN);
 		fDesktop->SetCursor(NULL);
@@ -518,7 +701,13 @@ MouseFilter::Filter(BMessage* message, EventTarget** _target, int32* _viewToken,
 
 	fDesktop->SetLastMouseState(where, buttons, window);
 
+	fDesktop->K_SetLastMouseState(where, buttons, window1);//khidki
+
 	fDesktop->NotifyMouseEvent(message);
+
+	fDesktop->K_NotifyMouseEvent(message);//khidki
+
+debug_printf("[MouseFilter]{Filter} end\n");
 
 	fDesktop->UnlockAllWindows();
 
@@ -678,6 +867,8 @@ workspace_to_workspaces(int32 index)
 static inline bool
 workspace_in_workspaces(int32 index, uint32 workspaces)
 {
+debug_printf("[Desktop] {workspace_in_workspaces} index = %d, workspaces = %d \n", index, workspaces);
+debug_printf("[Desktop] {workspace_in_workspaces (workspaces & (1UL << index)) != 0 = %d\n", (workspaces & (1UL << index)) != 0);
 	return (workspaces & (1UL << index)) != 0;
 }
 
@@ -3013,6 +3204,7 @@ debug_printf("[Desktop] {K_AddWindow} \n");
 		window->SetWorkspaces(window->SubsetWorkspaces());
 	}
 
+debug_printf("[Desktop] {K_AddWindow} window->Workspaces() = %d\n", window->Workspaces());
 	K__ChangeWindowWorkspaces(window, 0, window->Workspaces());
 
 	K_NotifyWindowAdded(window);
@@ -6081,6 +6273,8 @@ debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} \n");
 	if (!window->IsNormal() || window->IsHidden())
 		return;
 
+debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} is it here... \n");
+
 	for (K_Window* subset = k_fSubsetWindows.FirstWindow(); subset != NULL;
 			subset = subset->NextWindow(k_kSubsetList)) {
 		debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} has k_fSubsetWindows\n");
@@ -6272,7 +6466,7 @@ debug_printf("[Desktop] {K__ChangeWindowWorkspaces} kMaxWorkspaces =%d\n",kMaxWo
 
 	// take care about modals and floating windows
 	K__UpdateSubsetWorkspaces(window);
-
+debug_printf("[Desktop] {K__ChangeWindowWorkspaces} before NOtify... oldWorkspaces =%d and newWorkspaces =%d\n", oldWorkspaces,newWorkspaces);
 	K_NotifyWindowWorkspacesChanged(window, newWorkspaces);// tododo
 
 	UnlockAllWindows();
@@ -6978,6 +7172,19 @@ const rgb_color desktop_bckgrnd_col={64,64,64,255};//set the desktop background 
 void
 Desktop::_SetBackground(BRegion& background)
 {
+debug_printf("[Desktop] {_SetBackground}.\n");
+debug_printf("[Desktop] {_SetBackground} debuging background region...\n");
+	debug_printf("background.fCount=%d\n",background.FCount());
+	debug_printf("background.fDataSize=%d\n",background.FDataSize());
+	for (int32 i = 0; i < background.FCount(); i++) {
+	debug_printf("[Desktop] {_SetBackground} inside loop i=%d\n",i);
+		clipping_rect *rect = background.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+debug_printf("[Desktop] {_SetBackground} debuging background region done and dusted...\n");
+
 	// NOTE: the drawing operation is caried out
 	// in the clipping region rebuild, but it is
 	// ok actually, because it also avoids trails on
@@ -6986,11 +7193,74 @@ Desktop::_SetBackground(BRegion& background)
 	// remember the region not covered by any windows
 	// and redraw the dirty background
 	BRegion dirtyBackground(background);
+
+debug_printf("[Desktop] {_SetBackground} debuging dirtyBackground region just created.\n");
+debug_printf("dirtyBackground.fCount=%d\n", dirtyBackground.FCount());
+debug_printf("dirtyBackground.fDataSize=%d\n", dirtyBackground.FDataSize());
+for (int32 i = 0; i < dirtyBackground.FCount(); i++) {
+debug_printf("[Desktop] {_SetBackground} inside loop i=%d\n",i);
+	clipping_rect *rect = dirtyBackground.get_DataArray(i);//fData[i];
+	debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+}
+debug_printf("[Desktop] {_SetBackground} debuging dirtyBackground region done and dusted.\n");
+
+
+debug_printf("[Desktop] {_SetBackground} debuging fBackgroundRegion region...\n");
+debug_printf("fBackgroundRegion.fCount = %d\n", fBackgroundRegion.FCount());
+debug_printf("fBackgroundRegion.fDataSize = %d\n", fBackgroundRegion.FDataSize());
+for (int32 i = 0; i < fBackgroundRegion.FCount(); i++) {
+	debug_printf("[Desktop] {_SetBackground} inside loop i=%d\n",i);
+	clipping_rect *rect = fBackgroundRegion.get_DataArray(i);//fData[i];
+	debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+debug_printf("[Desktop] {_SetBackground} debuging fBackgroundRegion region done and dusted...\n");
+
 	dirtyBackground.Exclude(&fBackgroundRegion);
+debug_printf("[Desktop] {_SetBackground} debuging dirtyBackground region after excluding fBackgroundRegion.\n");
+debug_printf("dirtyBackground.fCount = %d\n", dirtyBackground.FCount());
+debug_printf("dirtyBackground.fDataSize = %d\n", dirtyBackground.FDataSize());
+for (int32 i = 0; i < dirtyBackground.FCount(); i++) {
+debug_printf("[Desktop] {_SetBackground} inside loop i=%d\n",i);
+	clipping_rect *rect = dirtyBackground.get_DataArray(i);//fData[i];
+	debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+}
+debug_printf("[Desktop] {_SetBackground} debuging dirtyBackground region done after excluding fBackground Region.\n");
+
 	dirtyBackground.IntersectWith(&background);
+debug_printf("[Desktop] {_SetBackground} debuging dirtyBackground region after IntersectWith background.\n");
+debug_printf("dirtyBackground.fCount = %d\n", dirtyBackground.FCount());
+debug_printf("dirtyBackground.fDataSize = %d\n", dirtyBackground.FDataSize());
+for (int32 i = 0; i < dirtyBackground.FCount(); i++) {
+debug_printf("[Desktop] {_SetBackground} inside loop i=%d\n",i);
+	clipping_rect *rect = dirtyBackground.get_DataArray(i);//fData[i];
+	debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+}
+debug_printf("[Desktop] {_SetBackground} debuging dirtyBackground region done after IntersectWith background.\n");
+
 	fBackgroundRegion = background;
+debug_printf("[Desktop] {_SetBackground} debuging fBackgroundRegion after assigned background...\n");
+debug_printf("fBackgroundRegion.fCount = %d\n", fBackgroundRegion.FCount());
+debug_printf("fBackgroundRegion.fDataSize = %d\n", fBackgroundRegion.FDataSize());
+for (int32 i = 0; i < fBackgroundRegion.FCount(); i++) {
+	debug_printf("[Desktop] {_SetBackground} inside loop i=%d\n",i);
+	clipping_rect *rect = fBackgroundRegion.get_DataArray(i);//fData[i];
+	debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
+debug_printf("[Desktop] {_SetBackground} debuging fBackgroundRegion region done after assigned background.\n");
 	if (dirtyBackground.Frame().IsValid()) {
+		debug_printf("[Desktop] {_SetBackground} dirtyBackground.Frame().IsValid()\n");
 		if (GetDrawingEngine()->LockParallelAccess()) {
+			debug_printf("[Desktop] {_SetBackground} GetDrawingEngine()->LockParalledAccess().\n");
 			GetDrawingEngine()->FillRegion(dirtyBackground,
 				fWorkspaces[fCurrentWorkspace].Color());
 

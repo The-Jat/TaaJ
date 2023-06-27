@@ -18,15 +18,6 @@
 #include "clipping.h"
 #include "RegionSupport.h"
 
-//khidki code
-//start
-//#define TRACE_DEBUG_SERVER
-#ifdef TRACE_DEBUG_SERVER
-#	define TTRACE(x) debug_printf x
-#else
-#	define TTRACE(x) ;
-#endif
-//end
 
 
 const static int32 kDataBlockSize = 8;

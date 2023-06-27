@@ -376,7 +376,7 @@ K_DesktopObservable::K_NotifyWindowWorkspacesChanged(K_Window* window,
 	uint32 workspaces)
 {
 debug_printf("[K_DesktopObservable]{K_NotifyWindowWorkspacesChanged}\n");
-//debug_printf("[K_DesktopObservable]{K_NotifyWindowWorkspacesChanged}workspaces=%u,workspaces\n");
+//debug_printf("[K_DesktopObservable]{K_NotifyWindowWorkspacesChanged}workspaces=%d,workspaces\n");
 
 	if (fWeAreInvoking)
 		return;
@@ -384,9 +384,12 @@ debug_printf("[K_DesktopObservable]{K_NotifyWindowWorkspacesChanged}\n");
 
 	for (K_DesktopListener* listener = fDesktopListenerList.First();
 		listener != NULL; listener = fDesktopListenerList.GetNext(listener))
+	{
+	debug_printf("[K_DesktopObservable]{K_NotifyWindowWorkspacesChanged} loop\n");
 		listener->WindowWorkspacesChanged(window, workspaces);
+	}
 
-debug_printf("[K_DesktopObservable]{K_NotifyWorkspacesChanged}ended\n");
+debug_printf("[K_DesktopObservable]{K_NotifyWindowWorkspacesChanged}ended\n");
 }
 
 /*

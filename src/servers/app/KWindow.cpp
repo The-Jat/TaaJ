@@ -152,12 +152,15 @@ debug_printf("[K_Window]{K_Window constructor} after _InitWindowStack...\n");
 				&fMaxHeight);
 		}
 	}
-	if (fFeel != kOffscreenWindowFeel)
+	if (fFeel != kOffscreenWindowFeel){
+	debug_printf("[K_Window]{K_Window constructor} fFeel != kOffScreenWindowFeel\n");
 		fWindowBehaviour.SetTo(k_gDecorManager.AllocateWindowBehaviour(this));
+	}
 
 	// do we need to change our size to let the decorator fit?
 	// _ResizeBy() will adapt the frame for validity before resizing
 	if (feel == kDesktopWindowFeel) {
+	debug_printf("[K_Window]{K_Window constructor} feel == kDesktopWindowFeel\n");
 		// the desktop window spans over the whole screen
 		// TODO: this functionality should be moved somewhere else
 		//  (so that it is always used when the workspace is changed)
@@ -177,6 +180,11 @@ debug_printf("[K_Window]{K_Window constructor} after _InitWindowStack...\n");
 	STRACE(("\tFrame: (%.1f, %.1f, %.1f, %.1f)\n", fFrame.left, fFrame.top,
 		fFrame.right, fFrame.bottom));
 	STRACE(("\tWindow %s\n", window ? window->Title() : "NULL"));
+	
+	//debug_printf("K_Window %p, %s:\n", this, Name());
+	debug_printf("\tFrame: (%.1f, %.1f, %.1f, %.1f)\n", fFrame.left, fFrame.top,
+		fFrame.right, fFrame.bottom);
+	debug_printf("\tWindow %s\n", window ? window->Title() : "NULL");
 
 debug_printf("[K_Window]{K_Window constructor} end\n");
 }
@@ -343,7 +351,11 @@ debug_printf("[K_Window]{GetBorderRegion}\n");
 	// the outside, the clipping needs to be readlocked!
 
 
+
 //khidki
+debug_printf("region CountRects() = %d\n", region->CountRects());
+//region->PrintToStream();
+
 debug_printf("region->fCount=%d\n",region->FCount());
 debug_printf("region->fDataSize=%d\n",region->FDataSize());
 for (int32 i = 0; i < region->FCount(); i++) {
