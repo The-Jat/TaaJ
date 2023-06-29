@@ -18,7 +18,7 @@
 #include <Entry.h>
 #include <DecorInfo.h>
 
-#include "Decorator.h"
+#include "KDecorator.h"
 
 class Desktop;
 class K_DesktopListener;
@@ -42,7 +42,7 @@ public:
 
 			image_id			ImageID() const { return fImageID; }
 
-			Decorator*			AllocateDecorator(Desktop* desktop,
+			K_Decorator*			AllocateDecorator(Desktop* desktop,
 									DrawingEngine* engine, BRect rect,
 									const char* title, window_look look,
 									uint32 flags);
@@ -52,7 +52,7 @@ public:
 	virtual const K_DesktopListenerList& GetDesktopListeners();
 
 protected:
-	virtual	Decorator*			_AllocateDecorator(DesktopSettings& settings,
+	virtual	K_Decorator*			_AllocateDecorator(DesktopSettings& settings,
 									BRect rect, Desktop* desktop);
 
 			K_DesktopListenerList	fDesktopListeners;
@@ -68,7 +68,7 @@ public:
 								K_DecorManager();
 								~K_DecorManager();
 
-			Decorator*			AllocateDecorator(K_Window *window);
+			K_Decorator*			AllocateDecorator(K_Window *window);
 			K_WindowBehaviour*	AllocateWindowBehaviour(K_Window *window);
 			void				CleanupForWindow(K_Window *window);
 

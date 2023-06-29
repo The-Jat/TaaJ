@@ -240,7 +240,7 @@ K_SATStacking::FindSnappingCandidates(K_SATGroup* group)
 		if (_IsStackableWindow(parentWindow) == false
 			|| _IsStackableWindow(window) == false)
 			continue;
-		Decorator::Tab* tab = parentWindow->Decorator()->TabAt(
+		K_Decorator::Tab* tab = parentWindow->Decorator()->TabAt(
 			parentWindow->PositionInStack());
 		if (tab == NULL)
 			continue;

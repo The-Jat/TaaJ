@@ -90,10 +90,10 @@ K_SATWindow::~K_SATWindow()
 }
 
 
-SATDecorator*
+K_SATDecorator*
 K_SATWindow::GetDecorator() const
 {
-	return static_cast<SATDecorator*>(fWindow->Decorator());
+	return static_cast<K_SATDecorator*>(fWindow->Decorator());
 }
 
 
@@ -202,7 +202,7 @@ K_SATWindow::StackWindow(K_SATWindow* child)
 void
 K_SATWindow::RemovedFromArea(K_WindowArea* area)
 {
-	SATDecorator* decorator = GetDecorator();
+	K_SATDecorator* decorator = GetDecorator();
 	if (decorator != NULL)
 		fOldTabLocatiom = decorator->TabRect(fWindow->PositionInStack()).left;
 
@@ -217,7 +217,7 @@ K_SATWindow::RemovedFromArea(K_WindowArea* area)
 /*void
 K_SATWindow::K_RemovedFromArea(K_WindowArea* area)
 {
-	SATDecorator* decorator = GetDecorator();
+	K_SATDecorator* decorator = GetDecorator();
 	if (decorator != NULL)
 		fOldTabLocatiom = decorator->TabRect(fWindow->PositionInStack()).left;
 
@@ -290,7 +290,7 @@ K_SATWindow::DoGroupLayout()
 void
 K_SATWindow::AdjustSizeLimits(BRect targetFrame)
 {
-	SATDecorator* decorator = GetDecorator();
+	K_SATDecorator* decorator = GetDecorator();
 	if (decorator == NULL)
 		return;
 
@@ -320,7 +320,7 @@ K_SATWindow::GetSizeLimits(int32* minWidth, int32* maxWidth, int32* minHeight,
 	*maxWidth = fOriginalMaxWidth;
 	*maxHeight = fOriginalMaxHeight;
 
-	SATDecorator* decorator = GetDecorator();
+	K_SATDecorator* decorator = GetDecorator();
 	if (decorator == NULL)
 		return;
 
@@ -347,7 +347,7 @@ void
 K_SATWindow::AddDecorator(int32* minWidth, int32* maxWidth, int32* minHeight,
 	int32* maxHeight)
 {
-	SATDecorator* decorator = GetDecorator();
+	K_SATDecorator* decorator = GetDecorator();
 	if (decorator == NULL)
 		return;
 
@@ -363,7 +363,7 @@ K_SATWindow::AddDecorator(int32* minWidth, int32* maxWidth, int32* minHeight,
 void
 K_SATWindow::AddDecorator(BRect& frame)
 {
-	SATDecorator* decorator = GetDecorator();
+	K_SATDecorator* decorator = GetDecorator();
 	if (!decorator)
 		return;
 	frame.left -= decorator->BorderWidth();
@@ -461,18 +461,18 @@ K_SATWindow::PositionManagedBySAT()
 bool
 K_SATWindow::HighlightTab(bool active)
 {
-	SATDecorator* decorator = GetDecorator();
+	K_SATDecorator* decorator = GetDecorator();
 	if (!decorator)
 		return false;
 
 	int32 tabIndex = fWindow->PositionInStack();
 	BRegion dirty;
-	uint8 highlight = active ?  SATDecorator::HIGHLIGHT_STACK_AND_TILE : 0;
-	decorator->SetRegionHighlight(Decorator::REGION_TAB, highlight, &dirty,
+	uint8 highlight = active ?  K_SATDecorator::HIGHLIGHT_STACK_AND_TILE : 0;
+	decorator->SetRegionHighlight(K_Decorator::REGION_TAB, highlight, &dirty,
 		tabIndex);
-	decorator->SetRegionHighlight(Decorator::REGION_CLOSE_BUTTON, highlight,
+	decorator->SetRegionHighlight(K_Decorator::REGION_CLOSE_BUTTON, highlight,
 		&dirty, tabIndex);
-	decorator->SetRegionHighlight(Decorator::REGION_ZOOM_BUTTON, highlight,
+	decorator->SetRegionHighlight(K_Decorator::REGION_ZOOM_BUTTON, highlight,
 		&dirty, tabIndex);
 
 	fWindow->TopLayerStackWindow()->ProcessDirtyRegion(dirty);
@@ -481,14 +481,14 @@ K_SATWindow::HighlightTab(bool active)
 
 
 bool
-K_SATWindow::HighlightBorders(Decorator::Region region, bool active)
+K_SATWindow::HighlightBorders(K_Decorator::Region region, bool active)
 {
-	SATDecorator* decorator = GetDecorator();
+	K_SATDecorator* decorator = GetDecorator();
 	if (!decorator)
 		return false;
 
 	BRegion dirty;
-	uint8 highlight = active ? SATDecorator::HIGHLIGHT_STACK_AND_TILE : 0;
+	uint8 highlight = active ? K_SATDecorator::HIGHLIGHT_STACK_AND_TILE : 0;
 	decorator->SetRegionHighlight(region, highlight, &dirty);
 
 	fWindow->ProcessDirtyRegion(dirty);
@@ -551,7 +551,7 @@ K_SATWindow::_RestoreOriginalSize(bool stayBelowMouse)
 	BPoint mousePosition;
 	int32 buttons;
 	fDesktop->GetLastMouseState(&mousePosition, &buttons);
-	SATDecorator* decorator = GetDecorator();
+	K_SATDecorator* decorator = GetDecorator();
 	if (decorator == NULL)
 		return;
 	BRect tabRect = decorator->TitleBarRect();

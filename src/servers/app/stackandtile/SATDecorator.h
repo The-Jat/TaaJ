@@ -11,6 +11,7 @@
 
 #include "DecorManager.h"
 #include "DefaultDecorator.h"
+#include "KDefaultDecorator.h"
 #include "DefaultWindowBehaviour.h"
 #include "KDefaultWindowBehaviour.h"//khidki
 #include "StackAndTile.h"
@@ -58,7 +59,7 @@ private:
 };
 
 //khidki start
-class K_SATDecorator : public DefaultDecorator {
+class K_SATDecorator : public K_DefaultDecorator {
 public:
 			enum {
 				HIGHLIGHT_STACK_AND_TILE = HIGHLIGHT_USER_DEFINED
@@ -72,7 +73,7 @@ protected:
 	virtual	void				UpdateColors(DesktopSettings& settings);
 	virtual	void				GetComponentColors(Component component,
 									uint8 highlight, ComponentColors _colors,
-									Decorator::Tab* tab = NULL);
+									K_Decorator::Tab* tab = NULL);
 
 private:
 				rgb_color		fHighlightTabColor;

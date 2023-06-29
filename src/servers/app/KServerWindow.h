@@ -37,7 +37,7 @@ class BMessage;
 
 class Desktop;
 class ServerApp;
-class Decorator;
+class K_Decorator;
 class K_Window;
 class Workspace;
 class K_View;

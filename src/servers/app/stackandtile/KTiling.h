@@ -10,7 +10,7 @@
 
 #include "ObjectList.h"
 
-#include "Decorator.h"
+#include "KDecorator.h"
 #include "KStackAndTile.h"
 #include "KSATGroup.h"
 
@@ -59,9 +59,9 @@ private:
 		bool				_SearchHighlightWindow(K_Tab* tab, K_Tab* firstOrthTab,
 								K_Tab* secondOrthTab, const K_TabList* orthTabs,
 								K_Corner::position_t areaCorner,
-								Decorator::Region region, bool highlight);
+								K_Decorator::Region region, bool highlight);
 		void				_HighlightWindows(K_WindowArea* area,
-								Decorator::Region region, bool highlight);
+								K_Decorator::Region region, bool highlight);
 
 		void				_ResetSearchResults();
 

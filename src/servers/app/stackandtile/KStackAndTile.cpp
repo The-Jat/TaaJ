@@ -354,15 +354,15 @@ debug_printf("[K_StackAndTile]{MouseDown}\n");
 
 	int32 tab;
 	switch (satWindow->GetDecorator()->RegionAt(where, tab)) {
-		case Decorator::REGION_TAB:
-		case Decorator::REGION_LEFT_BORDER:
-		case Decorator::REGION_RIGHT_BORDER:
-		case Decorator::REGION_TOP_BORDER:
-		case Decorator::REGION_BOTTOM_BORDER:
-		case Decorator::REGION_LEFT_TOP_CORNER:
-		case Decorator::REGION_LEFT_BOTTOM_CORNER:
-		case Decorator::REGION_RIGHT_TOP_CORNER:
-		case Decorator::REGION_RIGHT_BOTTOM_CORNER:
+		case K_Decorator::REGION_TAB:
+		case K_Decorator::REGION_LEFT_BORDER:
+		case K_Decorator::REGION_RIGHT_BORDER:
+		case K_Decorator::REGION_TOP_BORDER:
+		case K_Decorator::REGION_BOTTOM_BORDER:
+		case K_Decorator::REGION_LEFT_TOP_CORNER:
+		case K_Decorator::REGION_LEFT_BOTTOM_CORNER:
+		case K_Decorator::REGION_RIGHT_TOP_CORNER:
+		case K_Decorator::REGION_RIGHT_BOTTOM_CORNER:
 			break;
 
 		default:

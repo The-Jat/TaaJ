@@ -11,7 +11,7 @@
 #include "KWorkspacesView.h"
 
 #include "AppServer.h"
-#include "Decorator.h"
+#include "KDecorator.h"
 #include "Desktop.h"
 #include "DrawingEngine.h"
 #include "DrawState.h"
@@ -188,7 +188,7 @@ K_WorkspacesView::_DrawWindow(DrawingEngine* drawingEngine,
 	BPoint offset = window->Frame().LeftTop() - windowPosition;
 	BRect frame = _WindowFrame(workspaceFrame, screenFrame, window->Frame(),
 		windowPosition);
-	Decorator *decorator = window->Decorator();
+	K_Decorator *decorator = window->Decorator();
 	BRect tabFrame(0, 0, 0, 0);
 	if (decorator != NULL)
 		tabFrame = decorator->TitleBarRect();

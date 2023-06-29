@@ -36,11 +36,11 @@ typedef	BObjectList<K_Window>	K_StackWindows;
 
 class K_WindowStack : public BReferenceable {
 public:
-								K_WindowStack(::Decorator* decorator);
+								K_WindowStack(::K_Decorator* decorator);
 								~K_WindowStack();
 
-			void				SetDecorator(::Decorator* decorator);
-			::Decorator*		Decorator();
+			void				SetDecorator(::K_Decorator* decorator);
+			::K_Decorator*		Decorator();
 
 	const	K_StackWindows&		WindowList() const { return fWindowList; }
 	const	K_StackWindows&		LayerOrder() const { return fWindowLayerOrder; }
@@ -56,7 +56,7 @@ public:
 			bool				MoveToTopLayer(K_Window* window);
 			bool				Move(int32 from, int32 to);
 private:
-			ObjectDeleter< ::Decorator>
+			ObjectDeleter< ::K_Decorator>
 								fDecorator;
 
 			K_StackWindows		fWindowList;
@@ -70,7 +70,7 @@ namespace BPrivate {
 
 class ClickTarget;
 class ClientLooper;
-class Decorator;
+class K_Decorator;
 class Desktop;
 class DrawingEngine;
 class EventDispatcher;
@@ -106,7 +106,7 @@ public:
 			K_Window*				PreviousWindow(int32 index) const;
 
 			::Desktop*			Desktop() const { return fDesktop; }
-			::Decorator*		Decorator() const;
+			::K_Decorator*		Decorator() const;
 			::KServerWindow*		KServerWindow() const { return fWindow; }
 			::EventTarget&		EventTarget() const
 									{ return fWindow->EventTarget(); }

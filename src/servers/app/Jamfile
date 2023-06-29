@@ -12,8 +12,12 @@ UseHeaders [ FDirName $(HAIKU_TOP) src servers app stackandtile ] ;
 
 UseHeaders [ FDirName $(HAIKU_TOP) src servers app decorator ] ;
 local decorator_src =
+KDecorator.cpp
 KDecorManager.cpp
+KDefaultDecorator.cpp
 KDefaultWindowBehaviour.cpp
+KMagneticBorder.cpp
+KTabDecorator.cpp
 KWindowBehaviour.cpp
 	DecorManager.cpp
 	Decorator.cpp

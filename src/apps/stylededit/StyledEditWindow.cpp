@@ -56,6 +56,15 @@
 
 using namespace BPrivate;
 
+//khidki code
+//start
+//#define TRACE_DEBUG_SERVER
+#ifdef TRACE_DEBUG_SERVER
+#	define TTRACE(x) debug_printf x
+#else
+#	define TTRACE(x) ;
+#endif
+//end
 
 const float kLineViewWidth = 30.0;
 const char* kInfoAttributeName = "StyledEdit-info";
@@ -242,6 +251,7 @@ StyledEditWindow::MessageReceived(BMessage* message)
 		case B_COPY:
 		case B_PASTE:
 		case B_SELECT_ALL:
+		debug_printf("B_CUT\n");
 			fTextView->MessageReceived(message);
 			break;
 		case MENU_CLEAR:

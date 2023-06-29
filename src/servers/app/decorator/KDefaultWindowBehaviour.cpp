@@ -25,7 +25,7 @@
 #include "AppServer.h"
 #include "ClickTarget.h"
 #include "Desktop.h"
-#include "DefaultDecorator.h"
+#include "KDefaultDecorator.h"
 #include "DrawingEngine.h"
 #include "KWindow.h"
 
@@ -346,13 +346,13 @@ struct K_DefaultWindowBehaviour::SlideTabState : MouseTrackingState {
 
 	void AdjustMultiTabLocation(float location, bool isShifting)
 	{
-		::Decorator* decorator = fWindow->Decorator();
+		::K_Decorator* decorator = fWindow->Decorator();
 		if (decorator == NULL || decorator->CountTabs() <= 1)
 			return;
 
 		// TODO does not work for none continuous shifts
 		int32 windowIndex = fWindow->PositionInStack();
-		DefaultDecorator::Tab*	movingTab = static_cast<DefaultDecorator::Tab*>(
+		K_DefaultDecorator::Tab*	movingTab = static_cast<K_DefaultDecorator::Tab*>(
 			decorator->TabAt(windowIndex));
 		int32 neighbourIndex = windowIndex;
 		if (movingTab->tabOffset > location)
@@ -360,8 +360,8 @@ struct K_DefaultWindowBehaviour::SlideTabState : MouseTrackingState {
 		else
 			neighbourIndex++;
 
-		DefaultDecorator::Tab* neighbourTab
-			= static_cast<DefaultDecorator::Tab*>(decorator->TabAt(
+		K_DefaultDecorator::Tab* neighbourTab
+			= static_cast<K_DefaultDecorator::Tab*>(decorator->TabAt(
 				neighbourIndex));
 		if (neighbourTab == NULL)
 			return;
@@ -390,7 +390,7 @@ struct K_DefaultWindowBehaviour::ResizeBorderState : MouseTrackingState {
 	BPoint fDelta;
 
 	ResizeBorderState(K_DefaultWindowBehaviour& behavior, BPoint where,
-		Decorator::Region region)
+		K_Decorator::Region region)
 		:
 		MouseTrackingState(behavior, where, true, false,
 			B_SECONDARY_MOUSE_BUTTON),
@@ -398,34 +398,34 @@ struct K_DefaultWindowBehaviour::ResizeBorderState : MouseTrackingState {
 		fVertical(NONE)
 	{
 		switch (region) {
-			case Decorator::REGION_TAB:
+			case K_Decorator::REGION_TAB:
 				// TODO: Handle like the border it is attached to (top/left)?
 				break;
-			case Decorator::REGION_LEFT_BORDER:
+			case K_Decorator::REGION_LEFT_BORDER:
 				fHorizontal = LEFT;
 				break;
-			case Decorator::REGION_RIGHT_BORDER:
+			case K_Decorator::REGION_RIGHT_BORDER:
 				fHorizontal = RIGHT;
 				break;
-			case Decorator::REGION_TOP_BORDER:
+			case K_Decorator::REGION_TOP_BORDER:
 				fVertical = TOP;
 				break;
-			case Decorator::REGION_BOTTOM_BORDER:
+			case K_Decorator::REGION_BOTTOM_BORDER:
 				fVertical = BOTTOM;
 				break;
-			case Decorator::REGION_LEFT_TOP_CORNER:
+			case K_Decorator::REGION_LEFT_TOP_CORNER:
 				fHorizontal = LEFT;
 				fVertical = TOP;
 				break;
-			case Decorator::REGION_LEFT_BOTTOM_CORNER:
+			case K_Decorator::REGION_LEFT_BOTTOM_CORNER:
 				fHorizontal = LEFT;
 				fVertical = BOTTOM;
 				break;
-			case Decorator::REGION_RIGHT_TOP_CORNER:
+			case K_Decorator::REGION_RIGHT_TOP_CORNER:
 				fHorizontal = RIGHT;
 				fVertical = TOP;
 				break;
-			case Decorator::REGION_RIGHT_BOTTOM_CORNER:
+			case K_Decorator::REGION_RIGHT_BOTTOM_CORNER:
 				fHorizontal = RIGHT;
 				fVertical = BOTTOM;
 				break;
@@ -523,7 +523,7 @@ private:
 
 struct K_DefaultWindowBehaviour::DecoratorButtonState : State {
 	DecoratorButtonState(K_DefaultWindowBehaviour& behavior,
-		int32 tab, Decorator::Region button)
+		int32 tab, K_Decorator::Region button)
 		:
 		State(behavior),
 		fTab(tab),
@@ -544,7 +544,7 @@ struct K_DefaultWindowBehaviour::DecoratorButtonState : State {
 			return;
 
 		// redraw the decorator
-		if (Decorator* decorator = fWindow->Decorator()) {
+		if (K_Decorator* decorator = fWindow->Decorator()) {
 			BRegion* visibleBorder = fWindow->RegionPool()->GetRegion();
 			fWindow->GetBorderRegion(visibleBorder);
 			visibleBorder->IntersectWith(&fWindow->VisibleRegion());
@@ -555,19 +555,19 @@ struct K_DefaultWindowBehaviour::DecoratorButtonState : State {
 
 			int32 tab;
 			switch (fButton) {
-				case Decorator::REGION_CLOSE_BUTTON:
+				case K_Decorator::REGION_CLOSE_BUTTON:
 					decorator->SetClose(fTab, false);
 					if (fBehavior._RegionFor(message, tab) == fButton)
 						fWindow->KServerWindow()->NotifyQuitRequested();
 					break;
 
-				case Decorator::REGION_ZOOM_BUTTON:
+				case K_Decorator::REGION_ZOOM_BUTTON:
 					decorator->SetZoom(fTab, false);
 					if (fBehavior._RegionFor(message, tab) == fButton)
 						fWindow->KServerWindow()->NotifyZoom();
 					break;
 
-				case Decorator::REGION_MINIMIZE_BUTTON:
+				case K_Decorator::REGION_MINIMIZE_BUTTON:
 					decorator->SetMinimize(fTab, false);
 					if (fBehavior._RegionFor(message, tab) == fButton)
 						fWindow->KServerWindow()->NotifyMinimize(true);
@@ -593,7 +593,7 @@ struct K_DefaultWindowBehaviour::DecoratorButtonState : State {
 private:
 	void _RedrawDecorator(const BMessage* message)
 	{
-		if (Decorator* decorator = fWindow->Decorator()) {
+		if (K_Decorator* decorator = fWindow->Decorator()) {
 			BRegion* visibleBorder = fWindow->RegionPool()->GetRegion();
 			fWindow->GetBorderRegion(visibleBorder);
 			visibleBorder->IntersectWith(&fWindow->VisibleRegion());
@@ -603,19 +603,19 @@ private:
 			engine->ConstrainClippingRegion(visibleBorder);
 
 			int32 tab;
-			Decorator::Region hitRegion = message != NULL
+			K_Decorator::Region hitRegion = message != NULL
 				? fBehavior._RegionFor(message, tab) : fButton;
 
 			switch (fButton) {
-				case Decorator::REGION_CLOSE_BUTTON:
+				case K_Decorator::REGION_CLOSE_BUTTON:
 					decorator->SetClose(fTab, hitRegion == fButton);
 					break;
 
-				case Decorator::REGION_ZOOM_BUTTON:
+				case K_Decorator::REGION_ZOOM_BUTTON:
 					decorator->SetZoom(fTab, hitRegion == fButton);
 					break;
 
-				case Decorator::REGION_MINIMIZE_BUTTON:
+				case K_Decorator::REGION_MINIMIZE_BUTTON:
 					decorator->SetMinimize(fTab, hitRegion == fButton);
 					break;
 
@@ -630,7 +630,7 @@ private:
 
 protected:
 	int32				fTab;
-	Decorator::Region	fButton;
+	K_Decorator::Region	fButton;
 };
 
 
@@ -789,9 +789,9 @@ K_DefaultWindowBehaviour::MouseDown(BMessage* message, BPoint where,
 	// No state active yet, or it wants us to handle the event -- determine the
 	// click region and decide what to do.
 
-	Decorator* decorator = fWindow->Decorator();
+	K_Decorator* decorator = fWindow->Decorator();
 
-	Decorator::Region hitRegion = Decorator::REGION_NONE;
+	K_Decorator::Region hitRegion = K_Decorator::REGION_NONE;
 	int32 tab = -1;
 	Action action = ACTION_NONE;
 
@@ -809,7 +809,7 @@ K_DefaultWindowBehaviour::MouseDown(BMessage* message, BPoint where,
 		if (windowModifier) {
 			// click with window modifier keys -- let the whole window behave
 			// like the border
-			hitRegion = Decorator::REGION_LEFT_BORDER;
+			hitRegion = K_Decorator::REGION_LEFT_BORDER;
 		} else {
 			// click on the decorator -- get the exact region
 			hitRegion = _RegionFor(message, tab);
@@ -821,7 +821,7 @@ K_DefaultWindowBehaviour::MouseDown(BMessage* message, BPoint where,
 		if ((buttons & B_PRIMARY_MOUSE_BUTTON) != 0) {
 			// left mouse button
 			switch (hitRegion) {
-				case Decorator::REGION_TAB: {
+				case K_Decorator::REGION_TAB: {
 					// tab sliding in any case if either shift key is held down
 					// except sliding up-down by moving mouse left-right would
 					// look strange
@@ -834,36 +834,36 @@ K_DefaultWindowBehaviour::MouseDown(BMessage* message, BPoint where,
 					break;
 				}
 
-				case Decorator::REGION_LEFT_BORDER:
-				case Decorator::REGION_RIGHT_BORDER:
-				case Decorator::REGION_TOP_BORDER:
-				case Decorator::REGION_BOTTOM_BORDER:
+				case K_Decorator::REGION_LEFT_BORDER:
+				case K_Decorator::REGION_RIGHT_BORDER:
+				case K_Decorator::REGION_TOP_BORDER:
+				case K_Decorator::REGION_BOTTOM_BORDER:
 					action = ACTION_DRAG;
 					break;
 
-				case Decorator::REGION_CLOSE_BUTTON:
+				case K_Decorator::REGION_CLOSE_BUTTON:
 					action = (flags & B_NOT_CLOSABLE) == 0
 						? ACTION_CLOSE : ACTION_DRAG;
 					break;
 
-				case Decorator::REGION_ZOOM_BUTTON:
+				case K_Decorator::REGION_ZOOM_BUTTON:
 					action = (flags & B_NOT_ZOOMABLE) == 0
 						? ACTION_ZOOM : ACTION_DRAG;
 					break;
 
-				case Decorator::REGION_MINIMIZE_BUTTON:
+				case K_Decorator::REGION_MINIMIZE_BUTTON:
 					action = (flags & B_NOT_MINIMIZABLE) == 0
 						? ACTION_MINIMIZE : ACTION_DRAG;
 					break;
 
-				case Decorator::REGION_LEFT_TOP_CORNER:
-				case Decorator::REGION_LEFT_BOTTOM_CORNER:
-				case Decorator::REGION_RIGHT_TOP_CORNER:
+				case K_Decorator::REGION_LEFT_TOP_CORNER:
+				case K_Decorator::REGION_LEFT_BOTTOM_CORNER:
+				case K_Decorator::REGION_RIGHT_TOP_CORNER:
 					// TODO: Handle correctly!
 					action = ACTION_DRAG;
 					break;
 
-				case Decorator::REGION_RIGHT_BOTTOM_CORNER:
+				case K_Decorator::REGION_RIGHT_BOTTOM_CORNER:
 					action = (flags & B_NOT_RESIZABLE) == 0
 						? ACTION_RESIZE : ACTION_DRAG;
 					break;
@@ -874,18 +874,18 @@ K_DefaultWindowBehaviour::MouseDown(BMessage* message, BPoint where,
 		} else if ((buttons & B_SECONDARY_MOUSE_BUTTON) != 0) {
 			// right mouse button
 			switch (hitRegion) {
-				case Decorator::REGION_TAB:
-				case Decorator::REGION_LEFT_BORDER:
-				case Decorator::REGION_RIGHT_BORDER:
-				case Decorator::REGION_TOP_BORDER:
-				case Decorator::REGION_BOTTOM_BORDER:
-				case Decorator::REGION_CLOSE_BUTTON:
-				case Decorator::REGION_ZOOM_BUTTON:
-				case Decorator::REGION_MINIMIZE_BUTTON:
-				case Decorator::REGION_LEFT_TOP_CORNER:
-				case Decorator::REGION_LEFT_BOTTOM_CORNER:
-				case Decorator::REGION_RIGHT_TOP_CORNER:
-				case Decorator::REGION_RIGHT_BOTTOM_CORNER:
+				case K_Decorator::REGION_TAB:
+				case K_Decorator::REGION_LEFT_BORDER:
+				case K_Decorator::REGION_RIGHT_BORDER:
+				case K_Decorator::REGION_TOP_BORDER:
+				case K_Decorator::REGION_BOTTOM_BORDER:
+				case K_Decorator::REGION_CLOSE_BUTTON:
+				case K_Decorator::REGION_ZOOM_BUTTON:
+				case K_Decorator::REGION_MINIMIZE_BUTTON:
+				case K_Decorator::REGION_LEFT_TOP_CORNER:
+				case K_Decorator::REGION_LEFT_BOTTOM_CORNER:
+				case K_Decorator::REGION_RIGHT_TOP_CORNER:
+				case K_Decorator::REGION_RIGHT_BOTTOM_CORNER:
 					action = ACTION_RESIZE_BORDER;
 					break;
 
@@ -1021,7 +1021,7 @@ bool
 K_DefaultWindowBehaviour::AlterDeltaForSnap(K_Window* window, BPoint& delta,
 	bigtime_t now)
 {
-	return fMagneticBorder.K_AlterDeltaForSnap(window, delta, now);
+	return fMagneticBorder.AlterDeltaForSnap(window, delta, now);
 }
 
 
@@ -1034,16 +1034,16 @@ K_DefaultWindowBehaviour::_IsWindowModifier(int32 modifiers) const
 }
 
 
-Decorator::Region
+K_Decorator::Region
 K_DefaultWindowBehaviour::_RegionFor(const BMessage* message, int32& tab) const
 {
-	Decorator* decorator = fWindow->Decorator();
+	K_Decorator* decorator = fWindow->Decorator();
 	if (decorator == NULL)
-		return Decorator::REGION_NONE;
+		return K_Decorator::REGION_NONE;
 
 	BPoint where;
 	if (message->FindPoint("where", &where) != B_OK)
-		return Decorator::REGION_NONE;
+		return K_Decorator::REGION_NONE;
 
 	return decorator->RegionAt(where, tab);
 }
@@ -1053,33 +1053,33 @@ void
 K_DefaultWindowBehaviour::_SetBorderHighlights(int8 horizontal, int8 vertical,
 	bool active)
 {
-	if (Decorator* decorator = fWindow->Decorator()) {
+	if (K_Decorator* decorator = fWindow->Decorator()) {
 		uint8 highlight = active
-			? Decorator::HIGHLIGHT_RESIZE_BORDER
-			: Decorator::HIGHLIGHT_NONE;
+			? K_Decorator::HIGHLIGHT_RESIZE_BORDER
+			: K_Decorator::HIGHLIGHT_NONE;
 
 		// set the highlights for the borders
 		BRegion dirtyRegion;
 		switch (horizontal) {
 			case LEFT:
-				decorator->SetRegionHighlight(Decorator::REGION_LEFT_BORDER,
+				decorator->SetRegionHighlight(K_Decorator::REGION_LEFT_BORDER,
 					highlight, &dirtyRegion);
 				break;
 			case RIGHT:
 				decorator->SetRegionHighlight(
-					Decorator::REGION_RIGHT_BORDER, highlight,
+					K_Decorator::REGION_RIGHT_BORDER, highlight,
 					&dirtyRegion);
 				break;
 		}
 
 		switch (vertical) {
 			case TOP:
-				decorator->SetRegionHighlight(Decorator::REGION_TOP_BORDER,
+				decorator->SetRegionHighlight(K_Decorator::REGION_TOP_BORDER,
 					highlight, &dirtyRegion);
 				break;
 			case BOTTOM:
 				decorator->SetRegionHighlight(
-					Decorator::REGION_BOTTOM_BORDER, highlight,
+					K_Decorator::REGION_BOTTOM_BORDER, highlight,
 					&dirtyRegion);
 				break;
 		}
@@ -1089,21 +1089,21 @@ K_DefaultWindowBehaviour::_SetBorderHighlights(int8 horizontal, int8 vertical,
 			if (horizontal == LEFT) {
 				if (vertical == TOP) {
 					decorator->SetRegionHighlight(
-						Decorator::REGION_LEFT_TOP_CORNER, highlight,
+						K_Decorator::REGION_LEFT_TOP_CORNER, highlight,
 						&dirtyRegion);
 				} else {
 					decorator->SetRegionHighlight(
-						Decorator::REGION_LEFT_BOTTOM_CORNER, highlight,
+						K_Decorator::REGION_LEFT_BOTTOM_CORNER, highlight,
 						&dirtyRegion);
 				}
 			} else {
 				if (vertical == TOP) {
 					decorator->SetRegionHighlight(
-						Decorator::REGION_RIGHT_TOP_CORNER, highlight,
+						K_Decorator::REGION_RIGHT_TOP_CORNER, highlight,
 						&dirtyRegion);
 				} else {
 					decorator->SetRegionHighlight(
-						Decorator::REGION_RIGHT_BOTTOM_CORNER, highlight,
+						K_Decorator::REGION_RIGHT_BOTTOM_CORNER, highlight,
 						&dirtyRegion);
 				}
 			}

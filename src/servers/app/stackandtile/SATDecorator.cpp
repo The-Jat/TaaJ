@@ -136,7 +136,7 @@ SATDecorator::GetComponentColors(Component component, uint8 highlight,
 K_SATDecorator::K_SATDecorator(DesktopSettings& settings, BRect frame,
 							Desktop* desktop)
 	:
-	DefaultDecorator(settings, frame, desktop)
+	K_DefaultDecorator(settings, frame, desktop)
 {
 debug_printf("[K_SATDecorator]{K_SATDecorator constructor} entered K_SATDecorator ...\n");
 }
@@ -146,7 +146,7 @@ void
 K_SATDecorator::UpdateColors(DesktopSettings& settings)
 {
 debug_printf("[K_SATDecorator]{ UpdateColors} entered UpdateColors ...\n");
-	DefaultDecorator::UpdateColors(settings);
+	K_DefaultDecorator::UpdateColors(settings);
 
 	// Called during construction, and during any changes
 	fHighlightTabColor		= tint_color(fFocusTabColor, B_DARKEN_2_TINT);
@@ -160,12 +160,12 @@ debug_printf("[K_SATDecorator]{ UpdateColors} entered UpdateColors ...\n");
 
 void
 K_SATDecorator::GetComponentColors(Component component, uint8 highlight,
-	ComponentColors _colors, Decorator::Tab* _tab)
+	ComponentColors _colors, K_Decorator::Tab* _tab)
 {
-	DefaultDecorator::Tab* tab = static_cast<DefaultDecorator::Tab*>(_tab);
+	K_DefaultDecorator::Tab* tab = static_cast<K_DefaultDecorator::Tab*>(_tab);
 
-	// Get the standard colors from the DefaultDecorator
-	DefaultDecorator::GetComponentColors(component, highlight, _colors, tab);
+	// Get the standard colors from the K_DefaultDecorator
+	K_DefaultDecorator::GetComponentColors(component, highlight, _colors, tab);
 
 	// Now we need to make some changes if the Stack and tile highlight is used
 	if (highlight != HIGHLIGHT_STACK_AND_TILE)

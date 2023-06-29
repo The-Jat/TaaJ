@@ -40,7 +40,7 @@ public:
 
 //K_Window*	K_GetWindow() { return k_fWindow; }//khidki
 
-			SATDecorator*		GetDecorator() const;
+			K_SATDecorator*		GetDecorator() const;
 			K_StackAndTile*		GetStackAndTile() { return fStackAndTile; }
 			Desktop*			GetDesktop() { return fDesktop; }
 			//! Can be NULL if memory allocation failed!
@@ -81,14 +81,14 @@ public:
 			bool				IsHResizeable() const;
 			bool				IsVResizeable() const;
 
-			//! \return the complete window frame including the Decorator
+			//! \return the complete window frame including the K_Decorator
 			BRect				CompleteWindowFrame();
 
 			//! \return true if window is in a group with a least another window
 			bool				PositionManagedBySAT();
 
 			bool				HighlightTab(bool active);
-			bool				HighlightBorders(Decorator::Region region,
+			bool				HighlightBorders(K_Decorator::Region region,
 									bool active);
 			bool				IsTabHighlighted();
 			bool				IsBordersHighlighted();

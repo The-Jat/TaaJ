@@ -19,11 +19,11 @@ KSATGroup.cpp
 	SATWindow.cpp
 KSATWindow.cpp
 	StackAndTile.cpp
+KStackAndTile.cpp
 	Stacking.cpp
 KStacking.cpp
 	Tiling.cpp
 KTiling.cpp
-	KStackAndTile.cpp
 	;
 
 Includes [ FGristFiles $(sources) ]

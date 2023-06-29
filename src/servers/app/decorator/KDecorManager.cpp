@@ -65,7 +65,7 @@ K_DecorAddOn::InitCheck() const
 }
 
 
-Decorator*
+K_Decorator*
 K_DecorAddOn::AllocateDecorator(Desktop* desktop, DrawingEngine* engine,
 	BRect rect, const char* title, window_look look, uint32 flags)
 {
@@ -74,7 +74,7 @@ debug_printf("[K_DecorAddon]{AllocateDecorator} entered AllocateDecorator ...\n"
 		return NULL;
 
 	DesktopSettings settings(desktop);
-	Decorator* decorator;
+	K_Decorator* decorator;
 	decorator = _AllocateDecorator(settings, rect, desktop);
 	desktop->UnlockSingleWindow();
 	if (!decorator)
@@ -109,12 +109,12 @@ debug_printf("[K_DecorAddon]{GetDesktopListeners}\n");
 }
 
 
-Decorator*
+K_Decorator*
 K_DecorAddOn::_AllocateDecorator(DesktopSettings& settings, BRect rect,
 	Desktop* desktop)
 {
 debug_printf("[K_DecorAddon]{_AllocateDecorator} entered _AllocateDecorator ...\n");
-	return new (std::nothrow)SATDecorator(settings, rect, desktop);
+	return new (std::nothrow)K_SATDecorator(settings, rect, desktop);
 }
 
 
@@ -138,7 +138,7 @@ K_DecorManager::~K_DecorManager()
 }
 
 
-Decorator*
+K_Decorator*
 K_DecorManager::AllocateDecorator(K_Window* window)
 {
 debug_printf("[K_DecorManager]{AllocateDecorator} AllocateDecorator entered ...\n");

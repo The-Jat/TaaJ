@@ -28,7 +28,7 @@
 #include <WindowPrivate.h>
 
 #include "ClickTarget.h"
-#include "Decorator.h"
+#include "KDecorator.h"
 #include "KDecorManager.h"
 #include "Desktop.h"
 #include "DrawingEngine.h"
@@ -146,7 +146,7 @@ debug_printf("[K_Window]{K_Window constructor} after _InitWindowStack...\n");
 	if (fLook != B_NO_BORDER_WINDOW_LOOK && fCurrentStack.IsSet()) {
 		debug_printf("[K_Window]{K_Window constructor} fLook != B_NO_BORDER_WINDOW_LOOK\n");
 		// allocates a decorator
-		::Decorator* decorator = Decorator();
+		::K_Decorator* decorator = Decorator();
 		if (decorator != NULL) {
 			decorator->GetSizeLimits(&fMinWidth, &fMinHeight, &fMaxWidth,
 				&fMaxHeight);
@@ -370,7 +370,7 @@ debug_printf("[K_Window]{GetBorderRegion} inside loop i=%d\n",i);
 //1=(95,71,223,94)
 //2=(95,95,505,405)
 
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator)
 		*region = decorator->GetFootprint();
 	else
@@ -462,7 +462,7 @@ K_Window::MoveBy(int32 x, int32 y, bool moveStack)
 		fTopView->UpdateOverlay();
 	}
 
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (moveStack && decorator)
 		decorator->MoveBy(x, y);
 
@@ -529,7 +529,7 @@ K_Window::ResizeBy(int32 x, int32 y, BRegion* dirtyRegion, bool resizeStack)
 		fTopView->UpdateOverlay();
 	}
 
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator && resizeStack)
 		decorator->ResizeBy(x, y, dirtyRegion);
 
@@ -579,7 +579,7 @@ K_Window::SetOutlinesDelta(BPoint delta, BRegion* dirtyRegion)
 		delta.y = wantHeight - fFrame.IntegerHeight();
 	}
 
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 
 	if (decorator != NULL)
 		decorator->SetOutlinesDelta(delta, dirtyRegion);
@@ -771,7 +771,7 @@ K_Window::PreviousWindow(int32 index) const
 }
 
 
-::Decorator*
+::K_Decorator*
 K_Window::Decorator() const
 {
 debug_printf("[K_Window]{Decorator}\n");
@@ -785,7 +785,7 @@ debug_printf("[K_Window]{Decorator}\n");
 bool
 K_Window::ReloadDecor()
 {
-	::Decorator* decorator = NULL;
+	::K_Decorator* decorator = NULL;
 	K_WindowBehaviour* windowBehaviour = NULL;
 	K_WindowStack* stack = GetWindowStack();
 	if (stack == NULL)
@@ -1294,7 +1294,7 @@ K_Window::SetTitle(const char* name, BRegion& dirty)
 
 	fTitle = name;
 
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator) {
 		int32 index = PositionInStack();
 		decorator->SetTitle(index, name, &dirty);
@@ -1307,7 +1307,7 @@ K_Window::SetFocus(bool focus)
 {
 debug_printf("[K_Window] {SetFocus}\n");
 
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 
 	// executed from Desktop thread
 	// it holds the clipping write lock,
@@ -1485,7 +1485,7 @@ debug_printf("[K_Window]{SetSizeLimits}\n");
 	fMaxHeight = maxHeight;
 
 	// give the Decorator a say in this too
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator) {
 		decorator->GetSizeLimits(&fMinWidth, &fMinHeight, &fMaxWidth,
 			&fMaxHeight);
@@ -1511,7 +1511,7 @@ K_Window::GetSizeLimits(int32* minWidth, int32* maxWidth,
 bool
 K_Window::SetTabLocation(float location, bool isShifting, BRegion& dirty)
 {
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator) {
 		int32 index = PositionInStack();
 		return decorator->SetTabLocation(index, location, isShifting, &dirty);
@@ -1524,7 +1524,7 @@ K_Window::SetTabLocation(float location, bool isShifting, BRegion& dirty)
 float
 K_Window::TabLocation() const
 {
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator) {
 		int32 index = PositionInStack();
 		return decorator->TabLocation(index);
@@ -1544,7 +1544,7 @@ K_Window::SetDecoratorSettings(const BMessage& settings, BRegion& dirty)
 		return false;
 	}
 
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator)
 		return decorator->SetSettings(settings, &dirty);
 
@@ -1558,7 +1558,7 @@ K_Window::GetDecoratorSettings(BMessage* settings)
 	if (fDesktop)
 		fDesktop->K_GetDecoratorSettings(this, *settings);
 
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator)
 		return decorator->GetSettings(settings);
 
@@ -1569,7 +1569,7 @@ K_Window::GetDecoratorSettings(BMessage* settings)
 void
 K_Window::FontsChanged(BRegion* updateRegion)
 {
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator != NULL) {
 		DesktopSettings settings(fDesktop);
 		decorator->FontsChanged(settings, updateRegion);
@@ -1580,7 +1580,7 @@ K_Window::FontsChanged(BRegion* updateRegion)
 void
 K_Window::ColorsChanged(BRegion* updateRegion)
 {
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator != NULL) {
 		DesktopSettings settings(fDesktop);
 		decorator->ColorsChanged(settings, updateRegion);
@@ -1604,7 +1604,7 @@ K_Window::SetLook(window_look look, BRegion* updateRegion)
 
 	int32 stackPosition = PositionInStack();
 
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator == NULL && look != B_NO_BORDER_WINDOW_LOOK) {
 		// we need a new decorator
 		decorator = k_gDecorManager.AllocateDecorator(this);
@@ -1673,7 +1673,7 @@ debug_printf("[K_Window] {SetFlags} begins\n");
 		_PropagatePosition();
 	}
 
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator == NULL)
 		return;
 
@@ -2132,7 +2132,7 @@ K_Window::_DrawBorder()
 	// this is executed in the window thread, but only
 	// in respond to a REDRAW message having been received, the
 	// clipping lock is held for reading
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (!decorator)
 		return;
 
@@ -2354,7 +2354,7 @@ K_Window::_UpdateContentRegion()
 	fContentRegion.Set(fFrame);
 
 	// resize handle
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator)
 		fContentRegion.Exclude(&decorator->GetFootprint());
 
@@ -2490,7 +2490,7 @@ K_Window::DetachFromWindowStack(bool ownStackNeeded)
 		return false;
 
 	BRegion invalidatedRegion;
-	::Decorator* decorator = fCurrentStack->Decorator();
+	::K_Decorator* decorator = fCurrentStack->Decorator();
 	if (decorator != NULL) {
 		decorator->RemoveTab(index, &invalidatedRegion);
 		decorator->SetTopTab(fCurrentStack->LayerOrder().CountItems() - 1);
@@ -2545,10 +2545,10 @@ debug_printf("[K_Window]{AddWindowToStack}\n");
 	window->ResizeBy(deltaByX, deltaByY, &dirty, false);
 
 	// first collect dirt from the window to add
-	::Decorator* otherDecorator = window->Decorator();
+	::K_Decorator* otherDecorator = window->Decorator();
 	if (otherDecorator != NULL)
 		dirty.Include(otherDecorator->TitleBarRect());
-	::Decorator* decorator = stack->Decorator();
+	::K_Decorator* decorator = stack->Decorator();
 	if (decorator != NULL)
 		dirty.Include(decorator->TitleBarRect());
 
@@ -2578,7 +2578,7 @@ debug_printf("[K_Window]{AddWindowToStack} end\n");
 K_Window*
 K_Window::StackedWindowAt(const BPoint& where)
 {
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator == NULL)
 		return this;
 
@@ -2612,7 +2612,7 @@ K_Window::GetWindowStack()
 bool
 K_Window::MoveToTopStackLayer()
 {
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator == NULL)
 		return false;
 	decorator->SetDrawingEngine(GetDrawingEngine());
@@ -2632,7 +2632,7 @@ K_Window::MoveToStackPosition(int32 to, bool isMoving)
 		return false;
 
 	BRegion dirty;
-	::Decorator* decorator = Decorator();
+	::K_Decorator* decorator = Decorator();
 	if (decorator && decorator->MoveTab(index, to, isMoving, &dirty) == false)
 		return false;
 
@@ -2646,7 +2646,7 @@ K_Window::_InitWindowStack()
 {
 debug_printf("[K_Window]{_InitWindowStack}\n");
 	fCurrentStack = NULL;
-	::Decorator* decorator = NULL;
+	::K_Decorator* decorator = NULL;
 	if (fLook != B_NO_BORDER_WINDOW_LOOK)
 	{
 	debug_printf("[K_Window]{_InitWindowStack} fLook != B_NO_BORDER_WINDOW_LOOK...\n");
@@ -2674,7 +2674,7 @@ debug_printf("[K_Window]{_InitWindowStack} end\n");
 }
 
 
-K_WindowStack::K_WindowStack(::Decorator* decorator)
+K_WindowStack::K_WindowStack(::K_Decorator* decorator)
 	:
 	fDecorator(decorator)
 {
@@ -2689,13 +2689,13 @@ K_WindowStack::~K_WindowStack()
 
 
 void
-K_WindowStack::SetDecorator(::Decorator* decorator)
+K_WindowStack::SetDecorator(::K_Decorator* decorator)
 {
 	fDecorator.SetTo(decorator);
 }
 
 
-::Decorator*
+::K_Decorator*
 K_WindowStack::Decorator()
 {
 debug_printf("[K_WindowStack]{Decorator}\n");

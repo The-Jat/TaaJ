@@ -9,15 +9,15 @@
  */
 
 
-#include "MagneticBorder.h"
+#include "KMagneticBorder.h"
 
-#include "Decorator.h"
-#include "Window.h"
+#include "KDecorator.h"
+//#include "Window.h"
 #include "KWindow.h"//khidki
 #include "Screen.h"
 
 
-MagneticBorder::MagneticBorder()
+K_MagneticBorder::K_MagneticBorder()
 	:
 	fLastSnapTime(0)
 {
@@ -26,10 +26,10 @@ MagneticBorder::MagneticBorder()
 
 
 bool
-MagneticBorder::AlterDeltaForSnap(Window* window, BPoint& delta, bigtime_t now)
+K_MagneticBorder::AlterDeltaForSnap(K_Window* window, BPoint& delta, bigtime_t now)
 {
 	BRect frame = window->Frame();
-	Decorator* decorator = window->Decorator();
+	K_Decorator* decorator = window->Decorator();
 	if (decorator)
 		frame = decorator->GetFootprint().Frame();
 
@@ -38,11 +38,12 @@ MagneticBorder::AlterDeltaForSnap(Window* window, BPoint& delta, bigtime_t now)
 
 
 //khidki start
-/*bool
-MagneticBorder::K_AlterDeltaForSnap(K_Window* window, BPoint& delta, bigtime_t now)
+/*
+bool
+K_MagneticBorder::K_AlterDeltaForSnap(K_Window* window, BPoint& delta, bigtime_t now)
 {
 	BRect frame = window->Frame();
-	Decorator* decorator = window->Decorator();
+	K_Decorator* decorator = window->Decorator();
 	if (decorator)
 		frame = decorator->GetFootprint().Frame();
 
@@ -53,7 +54,7 @@ MagneticBorder::K_AlterDeltaForSnap(K_Window* window, BPoint& delta, bigtime_t n
 
 
 bool
-MagneticBorder::AlterDeltaForSnap(const Screen* screen, BRect& frame,
+K_MagneticBorder::AlterDeltaForSnap(const Screen* screen, BRect& frame,
 	BPoint& delta, bigtime_t now)
 {
 	// Alter the delta (which is a proposed offset used while dragging a
