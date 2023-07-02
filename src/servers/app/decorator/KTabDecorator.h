@@ -27,7 +27,7 @@ class Desktop;
 
 class K_TabDecorator: public K_Decorator {
 public:
-								K_TabDecorator(DesktopSettings& settings,
+								K_TabDecorator(K_DesktopSettings& settings,
 									BRect frame, Desktop* desktop);
 	virtual						~K_TabDecorator();
 
@@ -73,7 +73,7 @@ public:
 									uint8 highlight, BRegion* dirty,
 									int32 tab = -1);
 
-	virtual void				UpdateColors(DesktopSettings& settings);
+	virtual void				UpdateColors(K_DesktopSettings& settings);
 
 protected:
 	virtual	void				_DoLayout();
@@ -108,7 +108,7 @@ protected:
 	virtual	bool				_SetSettings(const BMessage& settings,
 									BRegion* updateRegion = NULL);
 
-	virtual	bool				_AddTab(DesktopSettings& settings,
+	virtual	bool				_AddTab(K_DesktopSettings& settings,
 									int32 index = -1,
 									BRegion* updateRegion = NULL);
 	virtual	bool				_RemoveTab(int32 index,
@@ -122,7 +122,7 @@ protected:
 									float* offset, float* size,
 									float* inset) const;
 
-	virtual	void				_UpdateFont(DesktopSettings& settings);
+	virtual	void				_UpdateFont(K_DesktopSettings& settings);
 
 private:
 			void				_LayoutTabItems(K_Decorator::Tab* tab,

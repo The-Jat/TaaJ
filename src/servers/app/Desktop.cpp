@@ -46,6 +46,7 @@
 #include "DecorManager.h"
 #include "KDecorManager.h"//khidki
 #include "DesktopSettingsPrivate.h"
+#include "KDesktopSettingsPrivate.h" //khidki
 #include "DrawingEngine.h"
 #include "GlobalFontManager.h"
 #include "HWInterface.h"
@@ -883,7 +884,9 @@ Desktop::Desktop(uid_t userID, const char* targetScreen)
 	fUserID(userID),
 	fTargetScreen(strdup(targetScreen)),
 	fSettings(NULL),
+	khidkiSettings(NULL),// khidki
 	fSharedReadOnlyArea(-1),
+	kSharedReadOnlyArea(-1), //khidki
 	fApplicationsLock("application list"),
 	fShutdownSemaphore(-1),
 	fShutdownCount(0),
@@ -960,6 +963,7 @@ debug_printf("[Desktop] {constructor} after registering K_RegisterListener \n");
 Desktop::~Desktop()
 {
 	delete_area(fSharedReadOnlyArea);
+	delete_area(kSharedReadOnlyArea);//khidki
 	delete_port(fMessagePort);
 	gFontManager->DetachUser(fUserID);
 
@@ -1004,9 +1008,21 @@ Desktop::Init()
 	if (fSharedReadOnlyArea < B_OK)
 		return fSharedReadOnlyArea;
 
+	// khidki start 
+	const size_t areaSize2 = B_PAGE_SIZE;
+	char name2[B_OS_NAME_LENGTH];
+	snprintf(name2, sizeof(name2), "d:%d:shared read only", 777);
+	kSharedReadOnlyArea = create_area(name, (void **)&kServerReadOnlyMemory,
+		B_ANY_ADDRESS, areaSize2, B_NO_LOCK, B_READ_AREA | B_WRITE_AREA | B_CLONEABLE_AREA);
+	if (kSharedReadOnlyArea < B_OK)
+		return kSharedReadOnlyArea;
+	//khidki end
+
 	gFontManager->AttachUser(fUserID);
 
 	fSettings.SetTo(new DesktopSettingsPrivate(fServerReadOnlyMemory));
+
+	khidkiSettings.SetTo(new K_DesktopSettingsPrivate(kServerReadOnlyMemory));//khidki
 
 	for (int32 i = 0; i < kMaxWorkspaces; i++) {
 		_Windows(i).SetIndex(i);

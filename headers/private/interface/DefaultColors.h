@@ -12,6 +12,8 @@ namespace BPrivate {
 
 extern const rgb_color* kDefaultColors;
 
+extern const rgb_color* defaultLightModeColors;	//khidki
+
 rgb_color GetSystemColor(color_which, bool darkVariant);
 
 } // namespace BPrivate

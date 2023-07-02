@@ -34,7 +34,7 @@
 #include <WindowPrivate.h>
 
 #include "BitmapDrawingEngine.h"
-#include "DesktopSettings.h"
+#include "KDesktopSettings.h"
 #include "DrawingEngine.h"
 #include "DrawState.h"
 #include "FontManager.h"
@@ -73,15 +73,17 @@ static const float kResizeKnobSize = 18.0;
 //	#pragma mark -
 
 
-// TODO: get rid of DesktopSettings here, and introduce private accessor
+// TODO: get rid of K_DesktopSettings here, and introduce private accessor
 //	methods to the K_Decorator base class
-K_TabDecorator::K_TabDecorator(DesktopSettings& settings, BRect frame,
+K_TabDecorator::K_TabDecorator(K_DesktopSettings& settings, BRect frame,
 							Desktop* desktop)
 	:
 	K_Decorator(settings, frame, desktop),
 	fOldMovingTab(0, 0, -1, -1)
 {
-debug_printf("[K_TabDecorator]{ K_TabDecorator}...\n");
+debug_printf("[K_TabDecorator] {K_TabDecorator}...\n");
+debug_printf("\t[K_TabDecorator] {K_TabDecorator} Frame (%.1f,%.1f,%.1f,%.1f)\n",
+		frame.left, frame.top, frame.right, frame.bottom);
 	STRACE(("K_TabDecorator:\n"));
 	STRACE(("\tFrame (%.1f,%.1f,%.1f,%.1f)\n",
 		frame.left, frame.top, frame.right, frame.bottom));
@@ -214,32 +216,33 @@ K_TabDecorator::SetRegionHighlight(Region region, uint8 highlight,
 
 
 void
-K_TabDecorator::UpdateColors(DesktopSettings& settings)
+K_TabDecorator::UpdateColors(K_DesktopSettings& settings)
 {
 	// Desktop is write locked, so be quick about it.
-	fFocusFrameColor		= settings.UIColor(B_WINDOW_BORDER_COLOR);
-	fFocusTabColor			= settings.UIColor(B_WINDOW_TAB_COLOR);
-	fFocusTabColorLight		= tint_color(fFocusTabColor,
-								(B_LIGHTEN_MAX_TINT + B_LIGHTEN_2_TINT) / 2);
-	fFocusTabColorBevel		= tint_color(fFocusTabColor, B_LIGHTEN_2_TINT);
-	fFocusTabColorShadow	= tint_color(fFocusTabColor,
-								(B_DARKEN_1_TINT + B_NO_TINT) / 2);
-	fFocusTextColor			= settings.UIColor(B_WINDOW_TEXT_COLOR);
+	fFocusFrameColor		= settings.UIColor(K_WINDOW_BORDER_COLOR);
+	fFocusTabColor			= settings.UIColor(K_WINDOW_TAB_COLOR);
+	fFocusTabColorLight		= settings.UIColor(K_WINDOW_TAB_COLOR);//{255,0,0};// tint_color(fFocusTabColor,
+					//			(B_LIGHTEN_MAX_TINT + B_LIGHTEN_2_TINT) / 2);
+	fFocusTabColorBevel		= settings.UIColor(K_WINDOW_TAB_COLOR);//{0, 255, 0};//tint_color(fFocusTabColor, B_LIGHTEN_2_TINT);
+	fFocusTabColorShadow	= settings.UIColor(K_WINDOW_TAB_COLOR);//{0, 0, 255};//tint_color(fFocusTabColor,
+				//				(B_DARKEN_1_TINT + B_NO_TINT) / 2);
+	fFocusTextColor			= settings.UIColor(K_WINDOW_TEXT_COLOR);
 
-	fNonFocusFrameColor		= settings.UIColor(B_WINDOW_INACTIVE_BORDER_COLOR);
-	fNonFocusTabColor		= settings.UIColor(B_WINDOW_INACTIVE_TAB_COLOR);
+	fNonFocusFrameColor		= settings.UIColor(K_WINDOW_INACTIVE_BORDER_COLOR);
+	fNonFocusTabColor		= settings.UIColor(K_WINDOW_INACTIVE_TAB_COLOR);
 	fNonFocusTabColorLight	= tint_color(fNonFocusTabColor,
 								(B_LIGHTEN_MAX_TINT + B_LIGHTEN_2_TINT) / 2);
 	fNonFocusTabColorBevel	= tint_color(fNonFocusTabColor, B_LIGHTEN_2_TINT);
 	fNonFocusTabColorShadow	= tint_color(fNonFocusTabColor,
 								(B_DARKEN_1_TINT + B_NO_TINT) / 2);
-	fNonFocusTextColor = settings.UIColor(B_WINDOW_INACTIVE_TEXT_COLOR);
+	fNonFocusTextColor = settings.UIColor(K_WINDOW_INACTIVE_TEXT_COLOR);
 }
 
 
 void
 K_TabDecorator::_DoLayout()
 {
+debug_printf("[K_TabDecorator] {_DoLayout} \n");
 	STRACE(("K_TabDecorator: Do Layout\n"));
 	// Here we determine the size of every rectangle that we use
 	// internally when we are given the size of the client rectangle.
@@ -248,6 +251,7 @@ K_TabDecorator::_DoLayout()
 
 	// TODO: Put this computation somewhere more central!
 	const float scaleFactor = max_c(fDrawState.Font().Size() / 12.0f, 1.0f);
+debug_printf("[K_TabDecorator] {_DoLayout} scaleFactor = %f\n", scaleFactor);
 
 	switch ((int)fTopTab->look) {
 		case B_MODAL_WINDOW_LOOK:
@@ -274,11 +278,26 @@ K_TabDecorator::_DoLayout()
 	}
 
 	fBorderWidth = int32(fBorderWidth * scaleFactor);
+	//fBorderWidth = 3; //khidki
+	debug_printf("[K_TabDecorator] {_DoLayout} fBorderWidth = %d\n", fBorderWidth);
 	fResizeKnobSize = kResizeKnobSize * scaleFactor;
 	fBorderResizeLength = kBorderResizeLength * scaleFactor;
 
 	// calculate left/top/right/bottom borders
 	if (fBorderWidth > 0) {
+	debug_printf("[K_TabDecorator] {_DoLayout} fBorderWidth > 0\n");
+	debug_printf("[K_TabDecorator] {_DoLayout} fLeftBorder earlier BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			fLeftBorder.left, fLeftBorder.top, fLeftBorder.right - 1, fLeftBorder.bottom - 1);
+debug_printf("[K_TabDecorator] {_DoLayout} fRightBorder earlier BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			fRightBorder.left, fRightBorder.top, fRightBorder.right - 1, fRightBorder.bottom - 1);
+debug_printf("[K_TabDecorator] {_DoLayout} fTopBorder earlier BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			fTopBorder.left, fTopBorder.top, fTopBorder.right - 1, fTopBorder.bottom - 1);
+debug_printf("[K_TabDecorator] {_DoLayout} fBottomBorder earlier BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			fBottomBorder.left, fBottomBorder.top, fBottomBorder.right - 1, fBottomBorder.bottom - 1);
+
+debug_printf("[K_TabDecorator] {_DoLayout} fFrame BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			fFrame.left, fFrame.top, fFrame.right - 1, fFrame.bottom - 1);
+			
 		// NOTE: no overlapping, the left and right border rects
 		// don't include the corners!
 		fLeftBorder.Set(fFrame.left - fBorderWidth, fFrame.top,
@@ -292,6 +311,14 @@ K_TabDecorator::_DoLayout()
 
 		fBottomBorder.Set(fFrame.left - fBorderWidth, fFrame.bottom + 1,
 			fFrame.right + fBorderWidth, fFrame.bottom + fBorderWidth);
+debug_printf("[K_TabDecorator] {_DoLayout} fLeftBorder BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			fLeftBorder.left, fLeftBorder.top, fLeftBorder.right - 1, fLeftBorder.bottom - 1);
+debug_printf("[K_TabDecorator] {_DoLayout} fRightBorder BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			fRightBorder.left, fRightBorder.top, fRightBorder.right - 1, fRightBorder.bottom - 1);
+debug_printf("[K_TabDecorator] {_DoLayout} fTopBorder BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			fTopBorder.left, fTopBorder.top, fTopBorder.right - 1, fTopBorder.bottom - 1);
+debug_printf("[K_TabDecorator] {_DoLayout} fBottomBorder BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			fBottomBorder.left, fBottomBorder.top, fBottomBorder.right - 1, fBottomBorder.bottom - 1);
 	} else {
 		// no border
 		fLeftBorder.Set(0.0, 0.0, -1.0, -1.0);
@@ -299,8 +326,9 @@ K_TabDecorator::_DoLayout()
 		fTopBorder.Set(0.0, 0.0, -1.0, -1.0);
 		fBottomBorder.Set(0.0, 0.0, -1.0, -1.0);
 	}
-
 	fBorderRect = BRect(fTopBorder.LeftTop(), fBottomBorder.RightBottom());
+debug_printf("[K_TabDecorator] {_DoLayout} fBorderRect BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			fBorderRect.left, fBorderRect.top, fBorderRect.right - 1, fBorderRect.bottom - 1);
 
 	// calculate resize rect
 	if (fBorderWidth > 1) {
@@ -358,18 +386,23 @@ K_TabDecorator::_DoOutlineLayout()
 void
 K_TabDecorator::_DoTabLayout()
 {
+debug_printf("[K_TabDecorator] {_DoTabLayout} \n");
 	float tabOffset = 0;
 	if (fTabList.CountItems() == 1) {
 		float tabSize;
 		tabOffset = _SingleTabOffsetAndSize(tabSize);
 	}
+debug_printf("[K_TabDecorator] {_DoTabLayout} tabOffset = %f\n", tabOffset);
+debug_printf("[K_TabDecorator] {_DoTabLayout} fTabList.CountItems() = %d\n", fTabList.CountItems());
 
 	float sumTabWidth = 0;
 	// calculate our tab rect
 	for (int32 i = 0; i < fTabList.CountItems(); i++) {
 		K_Decorator::Tab* tab = _TabAt(i);
-
 		BRect& tabRect = tab->tabRect;
+debug_printf("[K_TabDecorator] {_DoTabLayout} tabRect BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			tabRect.left, tabRect.top, tabRect.right - 1, tabRect.bottom - 1);
+		
 		// distance from one item of the tab bar to another.
 		// In this case the text and close/zoom rects
 		tab->textOffset = _DefaultTextOffset();
@@ -378,6 +411,7 @@ K_TabDecorator::_DoTabLayout()
 		fDrawState.Font().GetHeight(fontHeight);
 
 		if (tab->look != kLeftTitledWindowLook) {
+		debug_printf("[K_TabDecorator] {_DoTabLayout} tab->look != kLeftTitledWindowLook\n");
 			const float spacing = fBorderWidth * 1.4f;
 			tabRect.Set(fFrame.left - fBorderWidth,
 				fFrame.top - fBorderWidth
@@ -386,11 +420,14 @@ K_TabDecorator::_DoTabLayout()
 					fFrame.left + (spacing * 5) : fFrame.right) + fBorderWidth,
 				fFrame.top - fBorderWidth);
 		} else {
+		debug_printf("[K_TabDecorator] {_DoTabLayout} elsie \n");
 			tabRect.Set(fFrame.left - fBorderWidth
 				- ceilf(fontHeight.ascent + fontHeight.descent + fBorderWidth),
 					fFrame.top - fBorderWidth, fFrame.left - fBorderWidth,
 				fFrame.bottom + fBorderWidth);
 		}
+debug_printf("[K_TabDecorator] {_DoTabLayout} tabRect again BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			tabRect.left, tabRect.top, tabRect.right - 1, tabRect.bottom - 1);
 
 		// format tab rect for a floating window - make the rect smaller
 		if (tab->look == B_FLOATING_WINDOW_LOOK) {
@@ -402,6 +439,8 @@ K_TabDecorator::_DoTabLayout()
 		float size;
 		float inset;
 		_GetButtonSizeAndOffset(tabRect, &offset, &size, &inset);
+debug_printf("[K_TabDecorator] {_DoTabLayout} tabRect after _GetButtonSizeAndOffset BRect(l:%f, t:%f, r:%f, b:%f)\n",tabRect.left, tabRect.top, tabRect.right - 1, tabRect.bottom - 1);
+debug_printf("[K_TabDecorator] {_DoTabLayout} offset = %f, size = %f, inset = %f\n", offset, size, inset);
 
 		// tab->minTabSize contains just the room for the buttons
 		tab->minTabSize = inset * 2 + tab->textOffset;
@@ -421,17 +460,24 @@ K_TabDecorator::_DoTabLayout()
 
 		float tabSize = (tab->look != kLeftTitledWindowLook
 			? fFrame.Width() : fFrame.Height()) + fBorderWidth * 2;
+debug_printf("[K_TabDecorator] {_DoTabLayout} tabSize = %f\n", tabSize);
 		if (tabSize < tab->minTabSize)
 			tabSize = tab->minTabSize;
 		if (tabSize > tab->maxTabSize)
 			tabSize = tab->maxTabSize;
 
+debug_printf("[K_TabDecorator] {_DoTabLayout} tabSize after something = %f\n", tabSize);
 		// layout buttons and truncate text
-		if (tab->look != kLeftTitledWindowLook)
-			tabRect.right = tabRect.left + tabSize;
+		if (tab->look != kLeftTitledWindowLook){
+		debug_printf("[K_TabDecorator] {_DoTabLayout} tab->look != kLeftTitledWindowLook\n");
+		debug_printf("[K_TabDecorator] {_DoTabLayout} tabRect.right earlier = %f, tabRect.left = %f\n", tabRect.right, tabRect.left);
+			//tabRect.right = tabRect.left + tabSize;
+		debug_printf("[K_TabDecorator] {_DoTabLayout} tabRect.right after = %f, tabRect.left = %f\n", tabRect.right, tabRect.left);
+		}
 		else
 			tabRect.bottom = tabRect.top + tabSize;
 
+debug_printf("[K_TabDecorator] {_DoTabLayout} tabRect BRect(l:%f, t:%f, r:%f, b:%f)\n", tabRect.left, tabRect.top, tabRect.right - 1, tabRect.bottom - 1);
 		// make sure fTabOffset is within limits and apply it to
 		// the tabRect
 		tab->tabOffset = (uint32)tabOffset;
@@ -448,15 +494,19 @@ K_TabDecorator::_DoTabLayout()
 	}
 
 	float windowWidth = fFrame.Width() + 2 * fBorderWidth;
+debug_printf("[K_TabDecorator] {_DoTabLayout} windowWidth = %f\n", windowWidth);
 	if (CountTabs() > 1 && sumTabWidth > windowWidth)
 		_DistributeTabSize(sumTabWidth - windowWidth);
 
 	// finally, layout the buttons and text within the tab rect
 	for (int32 i = 0; i < fTabList.CountItems(); i++) {
+	debug_printf("[K_TabDecorator] {_DoTabLayout} i = %d\n", i);
 		K_Decorator::Tab* tab = fTabList.ItemAt(i);
 
-		if (i == 0)
+		if (i == 0){
 			fTitleBarRect = tab->tabRect;
+			debug_printf("[K_TabDecorator] {_DoTabLayout} fTitleBarRect i = 0 BRect(l:%f, t:%f, r:%f, b:%f)\n", fTitleBarRect.left, fTitleBarRect.top, fTitleBarRect.right - 1, fTitleBarRect.bottom - 1);
+		}
 		else
 			fTitleBarRect = fTitleBarRect | tab->tabRect;
 
@@ -464,6 +514,15 @@ K_TabDecorator::_DoTabLayout()
 	}
 
 	fTabsRegion = fTitleBarRect;
+debug_printf("dirty.fCount=%d\n",fTabsRegion.FCount());
+	debug_printf("dirty.fDataSize=%d\n",fTabsRegion.FDataSize());
+for (int32 i = 0; i < fTabsRegion.FCount(); i++) {
+	debug_printf("[K_TabDecorator]{_DoTabLayout} inside loop i=%d\n",i);
+		clipping_rect *rect = fTabsRegion.get_DataArray(i);//fData[i];
+		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+	}
 }
 
 
@@ -724,7 +783,7 @@ K_TabDecorator::_ResizeBy(BPoint offset, BRegion* dirty)
 
 		if (fTopTab->look != kLeftTitledWindowLook
 			&& tabSize != tabRect.Width()) {
-			tabRect.right = tabRect.left + tabSize;
+			//tabRect.right = tabRect.left + tabSize;
 		} else if (fTopTab->look == kLeftTitledWindowLook
 			&& tabSize != tabRect.Height()) {
 			tabRect.bottom = tabRect.top + tabSize;
@@ -758,6 +817,7 @@ K_TabDecorator::_ResizeBy(BPoint offset, BRegion* dirty)
 void
 K_TabDecorator::_SetFocus(K_Decorator::Tab* tab)
 {
+debug_printf("[K_TabDecorator] {_SetFocus}\n");
 	K_Decorator::Tab* decoratorTab = static_cast<K_Decorator::Tab*>(tab);
 
 	decoratorTab->buttonFocus = IsFocus(tab)
@@ -850,7 +910,7 @@ K_TabDecorator::_SetSettings(const BMessage& settings, BRegion* updateRegion)
 
 
 bool
-K_TabDecorator::_AddTab(DesktopSettings& settings, int32 index,
+K_TabDecorator::_AddTab(K_DesktopSettings& settings, int32 index,
 	BRegion* updateRegion)
 {
 	_UpdateFont(settings);
@@ -956,7 +1016,7 @@ K_TabDecorator::_DrawButtons(K_Decorator::Tab* tab, const BRect& invalid)
 
 
 void
-K_TabDecorator::_UpdateFont(DesktopSettings& settings)
+K_TabDecorator::_UpdateFont(K_DesktopSettings& settings)
 {
 	ServerFont font;
 	if (fTopTab->look == B_FLOATING_WINDOW_LOOK
@@ -997,6 +1057,7 @@ K_TabDecorator::_GetButtonSizeAndOffset(const BRect& tabRect, float* _offset,
 void
 K_TabDecorator::_LayoutTabItems(K_Decorator::Tab* _tab, const BRect& tabRect)
 {
+debug_printf("[K_TabDecorator] {_LayoutTabItems}\n");
 	K_Decorator::Tab* tab = static_cast<K_Decorator::Tab*>(_tab);
 
 	float offset;

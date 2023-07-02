@@ -132,6 +132,52 @@ static const rgb_color _kDefaultColors[kColorWhichCount] = {
 };
 const rgb_color* BPrivate::kDefaultColors = &_kDefaultColors[0];
 
+//khidki start
+static const rgb_color _defaultLightModeColors[kLightColorSchemeWhichCount] = {
+	{216, 216, 216, 255},	// B_PANEL_BACKGROUND_COLOR
+	{216, 216, 216, 255},	// B_MENU_BACKGROUND_COLOR
+	{215, 219, 223, 255},		// B_WINDOW_TAB_COLOR
+	{0, 0, 229, 255},		// B_KEYBOARD_NAVIGATION_COLOR
+	{51, 102, 152, 255},	// B_DESKTOP_COLOR
+	{153, 153, 153, 255},	// B_MENU_SELECTED_BACKGROUND_COLOR
+	{0, 0, 0, 255},			// B_MENU_ITEM_TEXT_COLOR
+	{0, 0, 0, 255},			// B_MENU_SELECTED_ITEM_TEXT_COLOR
+	{0, 0, 0, 255},			// B_MENU_SELECTED_BORDER_COLOR
+	{0, 0, 0, 255},			// B_PANEL_TEXT_COLOR
+	{255, 255, 255, 255},	// B_DOCUMENT_BACKGROUND_COLOR
+	{0, 0, 0, 255},			// B_DOCUMENT_TEXT_COLOR
+	{245, 245, 245, 255},	// B_CONTROL_BACKGROUND_COLOR
+	{0, 0, 0, 255},			// B_CONTROL_TEXT_COLOR
+	{172, 172, 172, 255},	// B_CONTROL_BORDER_COLOR
+	{102, 152, 203, 255},	// B_CONTROL_HIGHLIGHT_COLOR
+	{0, 0, 0, 255},			// B_NAVIGATION_PULSE_COLOR
+	{255, 255, 255, 255},	// B_SHINE_COLOR
+	{0, 0, 0, 255},			// B_SHADOW_COLOR
+	{255, 255, 216, 255},	// B_TOOLTIP_BACKGROUND_COLOR
+	{0, 0, 0, 255},			// B_TOOLTIP_TEXT_COLOR
+	{0, 0, 0, 255},			// B_WINDOW_TEXT_COLOR
+	{232, 232, 232, 255},	// B_WINDOW_INACTIVE_TAB_COLOR
+	{80, 80, 80, 255},		// B_WINDOW_INACTIVE_TEXT_COLOR
+	{224, 224, 224, 255},	// B_WINDOW_BORDER_COLOR
+	{232, 232, 232, 255},	// B_WINDOW_INACTIVE_BORDER_COLOR
+	{27, 82, 140, 255},     // B_CONTROL_MARK_COLOR
+	{255, 255, 255, 255},	// B_LIST_BACKGROUND_COLOR
+	{190, 190, 190, 255},	// B_LIST_SELECTED_BACKGROUND_COLOR
+	{0, 0, 0, 255},			// B_LIST_ITEM_TEXT_COLOR
+	{0, 0, 0, 255},			// B_LIST_SELECTED_ITEM_TEXT_COLOR
+	{216, 216, 216, 255},	// B_SCROLL_BAR_THUMB_COLOR
+	{51, 102, 187, 255},	// B_LINK_TEXT_COLOR
+	{102, 152, 203, 255},	// B_LINK_HOVER_COLOR
+	{145, 112, 155, 255},	// B_LINK_VISITED_COLOR
+	{121, 142, 203, 255},	// B_LINK_ACTIVE_COLOR
+	{50, 150, 255, 255},	// B_STATUS_BAR_COLOR
+	// 100...
+	{46, 204, 64, 255},		// B_SUCCESS_COLOR
+	{255, 65, 54, 255},		// B_FAILURE_COLOR
+	{}
+};
+const rgb_color* BPrivate::defaultLightModeColors = &_defaultLightModeColors[0];
+//khidki end
 
 static const rgb_color _kDefaultColorsDark[kColorWhichCount] = {
 	{43, 43, 43, 255},		// B_PANEL_BACKGROUND_COLOR
@@ -221,6 +267,52 @@ static const char* kColorNames[kColorWhichCount] = {
 	"B_FAILURE_COLOR",
 	NULL
 };
+
+//Khidki start
+static const char* defaultLightModeColorNames[kLightColorSchemeWhichCount] = {
+	"K_PANEL_BACKGROUND_COLOR",
+	"K_MENU_BACKGROUND_COLOR",
+	"K_WINDOW_TAB_COLOR",
+	"K_KEYBOARD_NAVIGATION_COLOR",
+	"K_DESKTOP_COLOR",
+	"K_MENU_SELECTED_BACKGROUND_COLOR",
+	"K_MENU_ITEM_TEXT_COLOR",
+	"K_MENU_SELECTED_ITEM_TEXT_COLOR",
+	"K_MENU_SELECTED_BORDER_COLOR",
+	"K_PANEL_TEXT_COLOR",
+	"K_DOCUMENT_BACKGROUND_COLOR",
+	"K_DOCUMENT_TEXT_COLOR",
+	"K_CONTROL_BACKGROUND_COLOR",
+	"K_CONTROL_TEXT_COLOR",
+	"K_CONTROL_BORDER_COLOR",
+	"K_CONTROL_HIGHLIGHT_COLOR",
+	"K_NAVIGATION_PULSE_COLOR",
+	"K_SHINE_COLOR",
+	"K_SHADOW_COLOR",
+	"K_TOOLTIP_BACKGROUND_COLOR",
+	"K_TOOLTIP_TEXT_COLOR",
+	"K_WINDOW_TEXT_COLOR",
+	"K_WINDOW_INACTIVE_TAB_COLOR",
+	"K_WINDOW_INACTIVE_TEXT_COLOR",
+	"K_WINDOW_BORDER_COLOR",
+	"K_WINDOW_INACTIVE_BORDER_COLOR",
+	"K_CONTROL_MARK_COLOR",
+	"K_LIST_BACKGROUND_COLOR",
+	"K_LIST_SELECTED_BACKGROUND_COLOR",
+	"K_LIST_ITEM_TEXT_COLOR",
+	"K_LIST_SELECTED_ITEM_TEXT_COLOR",
+	"K_SCROLL_BAR_THUMB_COLOR",
+	"K_LINK_TEXT_COLOR",
+	"K_LINK_HOVER_COLOR",
+	"K_LINK_VISITED_COLOR",
+	"K_LINK_ACTIVE_COLOR",
+	"K_STATUS_BAR_COLOR",
+	// 100...
+	"K_SUCCESS_COLOR",
+	"K_FAILURE_COLOR",
+	NULL
+};
+//Khidki end
 
 static image_id sControlLookAddon = -1;
 static image_id k_sControlLookAddon = -1;//khidki
@@ -2192,3 +2284,38 @@ truncate_string(BString& string, uint32 mode, float width,
 
 	// we've run through without the need to truncate, leave the string as it is
 }
+
+
+// khidki start
+const char*
+get_name_from_light_color_scheme_which(light_color_scheme_which which)
+{
+	// Suppress warnings for B_NO_COLOR.
+	if (which == K_NO_COLOR)
+		return NULL;
+
+	int32 index = light_color_scheme_which_to_index(which);
+	if (index < 0 || index >= kLightColorSchemeWhichCount) {
+		fprintf(stderr, "ui_color_name(): unknown color_which %d\n", which);
+		return NULL;
+	}
+
+	return defaultLightModeColorNames[index];
+}
+
+
+light_color_scheme_which
+get_light_color_scheme_which_from_name(const char* name)
+{
+	if (name == NULL)
+		return K_NO_COLOR;
+
+	for (int32 index = 0; index < kLightColorSchemeWhichCount; ++index) {
+		if (!strcmp(defaultLightModeColorNames[index], name))
+			return index_to_light_color_scheme_which(index);
+	}
+
+	return K_NO_COLOR;
+}
+// khidki end
+

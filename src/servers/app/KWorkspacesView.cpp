@@ -77,7 +77,7 @@ K_WorkspacesView::DetachedFromWindow()
 void
 K_WorkspacesView::_GetGrid(int32& columns, int32& rows)
 {
-	DesktopSettings settings(K_Window()->Desktop());
+	K_DesktopSettings settings(K_Window()->Desktop());
 
 	columns = settings.WorkspacesColumns();
 	rows = settings.WorkspacesRows();
@@ -205,11 +205,11 @@ K_WorkspacesView::_DrawWindow(DrawingEngine* drawingEngine,
 	rgb_color activeFrameColor = (rgb_color){ 180, 180, 180, 255 };
 	rgb_color inactiveFrameColor = (rgb_color){ 180, 180, 180, 255 };
 	if (decorator != NULL) {
-		activeTabColor = decorator->UIColor(B_WINDOW_TAB_COLOR);
-		inactiveTabColor = decorator->UIColor(B_WINDOW_INACTIVE_TAB_COLOR);
-		navColor = decorator->UIColor(B_NAVIGATION_BASE_COLOR);
-		activeFrameColor = decorator->UIColor(B_WINDOW_BORDER_COLOR);
-		inactiveFrameColor = decorator->UIColor(B_WINDOW_INACTIVE_BORDER_COLOR);
+		activeTabColor = decorator->UIColor(K_WINDOW_TAB_COLOR);
+		inactiveTabColor = decorator->UIColor(K_WINDOW_INACTIVE_TAB_COLOR);
+		navColor = decorator->UIColor(K_NAVIGATION_BASE_COLOR);
+		activeFrameColor = decorator->UIColor(K_WINDOW_BORDER_COLOR);
+		inactiveFrameColor = decorator->UIColor(K_WINDOW_INACTIVE_BORDER_COLOR);
 	}
 
 	rgb_color white = (rgb_color){ 255, 255, 255, 255 };

@@ -27,7 +27,7 @@ class ServerBitmap;
 
 class K_DefaultDecorator: public K_TabDecorator {
 public:
-								K_DefaultDecorator(DesktopSettings& settings,
+								K_DefaultDecorator(K_DesktopSettings& settings,
 									BRect frame, Desktop* desktop);
 	virtual						~K_DefaultDecorator();
 
@@ -35,7 +35,7 @@ public:
 									uint8 highlight, ComponentColors _colors,
 									K_Decorator::Tab* tab = NULL);
 
-	virtual void				UpdateColors(DesktopSettings& settings);
+	virtual void				UpdateColors(K_DesktopSettings& settings);
 
 protected:
 	virtual	void				_DrawFrame(BRect rect);

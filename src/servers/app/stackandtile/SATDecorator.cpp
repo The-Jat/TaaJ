@@ -133,7 +133,7 @@ SATDecorator::GetComponentColors(Component component, uint8 highlight,
 
 //khidki start
 
-K_SATDecorator::K_SATDecorator(DesktopSettings& settings, BRect frame,
+K_SATDecorator::K_SATDecorator(K_DesktopSettings& settings, BRect frame,
 							Desktop* desktop)
 	:
 	K_DefaultDecorator(settings, frame, desktop)
@@ -143,7 +143,7 @@ debug_printf("[K_SATDecorator]{K_SATDecorator constructor} entered K_SATDecorato
 
 
 void
-K_SATDecorator::UpdateColors(DesktopSettings& settings)
+K_SATDecorator::UpdateColors(K_DesktopSettings& settings)
 {
 debug_printf("[K_SATDecorator]{ UpdateColors} entered UpdateColors ...\n");
 	K_DefaultDecorator::UpdateColors(settings);

@@ -66,11 +66,11 @@ public:
 			};
 
 public:
-								K_SATDecorator(DesktopSettings& settings,
+								K_SATDecorator(K_DesktopSettings& settings,
 									BRect frame, Desktop* desktop);
 
 protected:
-	virtual	void				UpdateColors(DesktopSettings& settings);
+	virtual	void				UpdateColors(K_DesktopSettings& settings);
 	virtual	void				GetComponentColors(Component component,
 									uint8 highlight, ComponentColors _colors,
 									K_Decorator::Tab* tab = NULL);

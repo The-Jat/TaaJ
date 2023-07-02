@@ -52,7 +52,7 @@ public:
 	virtual const K_DesktopListenerList& GetDesktopListeners();
 
 protected:
-	virtual	K_Decorator*			_AllocateDecorator(DesktopSettings& settings,
+	virtual	K_Decorator*			_AllocateDecorator(K_DesktopSettings& settings,
 									BRect rect, Desktop* desktop);
 
 			K_DesktopListenerList	fDesktopListeners;

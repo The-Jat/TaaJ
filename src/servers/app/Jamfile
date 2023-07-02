@@ -79,6 +79,7 @@ chitrkaar.cpp
 	Desktop.cpp
 	DesktopListener.cpp
 	DesktopSettings.cpp
+KDesktopSettings.cpp
 	DirectWindowInfo.cpp
 	DrawState.cpp
 	EventDispatcher.cpp

@@ -23,7 +23,7 @@
 
 #include "AppServer.h"
 #include "Desktop.h"
-#include "DesktopSettings.h"
+#include "KDesktopSettings.h"
 #include "ServerConfig.h"
 #include "SATDecorator.h"
 #include "KWindow.h"
@@ -70,10 +70,12 @@ K_DecorAddOn::AllocateDecorator(Desktop* desktop, DrawingEngine* engine,
 	BRect rect, const char* title, window_look look, uint32 flags)
 {
 debug_printf("[K_DecorAddon]{AllocateDecorator} entered AllocateDecorator ...\n");
+debug_printf("[K_DecorAddon] {AllocateDecorator} rect BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			rect.left, rect.top, rect.right - 1, rect.bottom - 1);
 	if (!desktop->LockSingleWindow())
 		return NULL;
 
-	DesktopSettings settings(desktop);
+	K_DesktopSettings settings(desktop);
 	K_Decorator* decorator;
 	decorator = _AllocateDecorator(settings, rect, desktop);
 	desktop->UnlockSingleWindow();
@@ -110,10 +112,12 @@ debug_printf("[K_DecorAddon]{GetDesktopListeners}\n");
 
 
 K_Decorator*
-K_DecorAddOn::_AllocateDecorator(DesktopSettings& settings, BRect rect,
+K_DecorAddOn::_AllocateDecorator(K_DesktopSettings& settings, BRect rect,
 	Desktop* desktop)
 {
 debug_printf("[K_DecorAddon]{_AllocateDecorator} entered _AllocateDecorator ...\n");
+debug_printf("[K_DecorAddon] {_AllocateDecorator} rect BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			rect.left, rect.top, rect.right - 1, rect.bottom - 1);
 	return new (std::nothrow)K_SATDecorator(settings, rect, desktop);
 }
 

@@ -24,13 +24,13 @@
 #include <Region.h>
 
 #include "Desktop.h"
-#include "DesktopSettings.h"
+#include "KDesktopSettings.h"
 #include "DrawingEngine.h"
 
 //khidki code
 //start
-//#define TRACE_DEBUG_SERVER
-#ifdef TRACE_DEBUG_SERVER
+#define TRACE_KDECORATOR
+#ifdef TRACE_KDECORATOR
 #	define TTRACE(x) debug_printf x
 #else
 #	define TTRACE(x) ;
@@ -67,6 +67,7 @@ K_Decorator::Tab::Tab()
 	minTabSize(0.0f),
 	maxTabSize(0.0f)
 {
+debug_printf("[K_Decorator][Tab] {Tab}\n");
 	closeBitmaps[0] = closeBitmaps[1] = closeBitmaps[2] = closeBitmaps[3]
 		= minimizeBitmaps[0] = minimizeBitmaps[1] = minimizeBitmaps[2]
 		= minimizeBitmaps[3] = zoomBitmaps[0] = zoomBitmaps[1] = zoomBitmaps[2]
@@ -79,10 +80,10 @@ K_Decorator::Tab::Tab()
 	Does general initialization of internal data members and creates a colorset
 	object.
 
-	\param settings DesktopSettings pointer.
+	\param settings K_DesktopSettings pointer.
 	\param frame K_Decorator frame rectangle
 */
-K_Decorator::K_Decorator(DesktopSettings& settings, BRect frame,
+K_Decorator::K_Decorator(K_DesktopSettings& settings, BRect frame,
 					Desktop* desktop)
 	:
 	fLocker("K_Decorator"),
@@ -115,6 +116,8 @@ K_Decorator::K_Decorator(DesktopSettings& settings, BRect frame,
 	fFootprintValid(false)
 {
 debug_printf("[K_Decorator]{ K_Decorator}...\n");
+debug_printf("\t[K_Decorator] {K_Decorator} Frame (%.1f,%.1f,%.1f,%.1f)\n",
+		frame.left, frame.top, frame.right, frame.bottom);
 	memset(&fRegionHighlights, HIGHLIGHT_NONE, sizeof(fRegionHighlights));
 }
 
@@ -129,9 +132,10 @@ K_Decorator::~K_Decorator()
 
 
 K_Decorator::Tab*
-K_Decorator::AddTab(DesktopSettings& settings, const char* title,
+K_Decorator::AddTab(K_DesktopSettings& settings, const char* title,
 	window_look look, uint32 flags, int32 index, BRegion* updateRegion)
 {
+debug_printf("[K_Decorator] {AddTab}\n");
 	AutoWriteLocker _(fLocker);
 
 	K_Decorator::Tab* tab = _AllocateNewTab();
@@ -279,7 +283,7 @@ debug_printf("[K_Decorator]{ SetFlags} tab = %d\n", tab);
 /*!	\brief Called whenever the system fonts are changed.
 */
 void
-K_Decorator::FontsChanged(DesktopSettings& settings, BRegion* updateRegion)
+K_Decorator::FontsChanged(K_DesktopSettings& settings, BRegion* updateRegion)
 {
 	AutoWriteLocker _(fLocker);
 
@@ -291,7 +295,7 @@ K_Decorator::FontsChanged(DesktopSettings& settings, BRegion* updateRegion)
 /*!	\brief Called when a system colors change.
 */
 void
-K_Decorator::ColorsChanged(DesktopSettings& settings, BRegion* updateRegion)
+K_Decorator::ColorsChanged(K_DesktopSettings& settings, BRegion* updateRegion)
 {
 	AutoWriteLocker _(fLocker);
 
@@ -308,7 +312,7 @@ K_Decorator::ColorsChanged(DesktopSettings& settings, BRegion* updateRegion)
 	\param look New value for the look
 */
 void
-K_Decorator::SetLook(int32 tab, DesktopSettings& settings, window_look look,
+K_Decorator::SetLook(int32 tab, K_DesktopSettings& settings, window_look look,
 	BRegion* updateRect)
 {
 	AutoWriteLocker _(fLocker);
@@ -903,6 +907,7 @@ K_Decorator::GetSizeLimits(int32* minWidth, int32* minHeight,
 void
 K_Decorator::DrawTab(int32 tabIndex)
 {
+debug_printf("[K_Decorator] {DrawTab}\n");
 	AutoReadLocker _(fLocker);
 
 	K_Decorator::Tab* tab = fTabList.ItemAt(tabIndex);
@@ -972,10 +977,10 @@ K_Decorator::DrawZoom(int32 tab)
 
 
 rgb_color
-K_Decorator::UIColor(color_which which)
+K_Decorator::UIColor(light_color_scheme_which which)
 {
 	AutoReadLocker _(fLocker);
-	DesktopSettings settings(fDesktop);
+	K_DesktopSettings settings(fDesktop);
 	return settings.UIColor(which);
 }
 
@@ -1006,6 +1011,7 @@ K_Decorator::TabHeight()
 K_Decorator::Tab*
 K_Decorator::_AllocateNewTab()
 {
+debug_printf("[K_Decorator] {_AllocateNewTab()}\n");
 	K_Decorator::Tab* tab = new(std::nothrow) K_Decorator::Tab;
 	if (tab == NULL)
 		return NULL;
@@ -1039,6 +1045,7 @@ K_Decorator::_DrawTabs(BRect rect)
 void
 K_Decorator::_SetFocus(K_Decorator::Tab* tab)
 {
+debug_printf("[K_Decorator] {_SetFocus}\n");
 }
 
 
@@ -1058,7 +1065,7 @@ K_Decorator::_TabAt(int32 index) const
 
 
 void
-K_Decorator::_FontsChanged(DesktopSettings& settings, BRegion* updateRegion)
+K_Decorator::_FontsChanged(K_DesktopSettings& settings, BRegion* updateRegion)
 {
 	// get previous extent
 	if (updateRegion != NULL)
@@ -1077,7 +1084,7 @@ K_Decorator::_FontsChanged(DesktopSettings& settings, BRegion* updateRegion)
 
 
 void
-K_Decorator::_SetLook(K_Decorator::Tab* tab, DesktopSettings& settings,
+K_Decorator::_SetLook(K_Decorator::Tab* tab, K_DesktopSettings& settings,
 	window_look look, BRegion* updateRegion)
 {
 	// TODO: we could be much smarter about the update region

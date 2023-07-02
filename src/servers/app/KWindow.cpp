@@ -805,7 +805,7 @@ K_Window::ReloadDecor()
 		for (int32 i = 1; i < stack->CountWindows(); i++) {
 			K_Window* window = stack->WindowAt(i);
 			BRegion dirty;
-			DesktopSettings settings(fDesktop);
+			K_DesktopSettings settings(fDesktop);
 			if (decorator->AddTab(settings, window->Title(), window->Look(),
 				window->Flags(), -1, &dirty) == NULL) {
 				delete decorator;
@@ -1144,7 +1144,7 @@ debug_printf("[K_Window]{MouseDown} after MouseDown\n");
 				if (!acceptFirstClick) {
 				debug_printf("[K_Window]{MouseDown} !acceptFirstClick\n");
 					bool avoidFocus = (Flags() & B_AVOID_FOCUS) != 0;
-					DesktopSettings desktopSettings(fDesktop);
+					K_DesktopSettings desktopSettings(fDesktop);
 					if (desktopSettings.MouseMode() == B_NORMAL_MOUSE)
 					{
 						fDesktop->K_ActivateWindow(this);
@@ -1571,7 +1571,7 @@ K_Window::FontsChanged(BRegion* updateRegion)
 {
 	::K_Decorator* decorator = Decorator();
 	if (decorator != NULL) {
-		DesktopSettings settings(fDesktop);
+		K_DesktopSettings settings(fDesktop);
 		decorator->FontsChanged(settings, updateRegion);
 	}
 }
@@ -1582,7 +1582,7 @@ K_Window::ColorsChanged(BRegion* updateRegion)
 {
 	::K_Decorator* decorator = Decorator();
 	if (decorator != NULL) {
-		DesktopSettings settings(fDesktop);
+		K_DesktopSettings settings(fDesktop);
 		decorator->ColorsChanged(settings, updateRegion);
 	}
 }
@@ -1614,7 +1614,7 @@ K_Window::SetLook(window_look look, BRegion* updateRegion)
 	}
 
 	if (decorator != NULL) {
-		DesktopSettings settings(fDesktop);
+		K_DesktopSettings settings(fDesktop);
 		decorator->SetLook(stackPosition, settings, look, updateRegion);
 
 		// we might need to resize the window!
@@ -2561,7 +2561,7 @@ debug_printf("[K_Window]{AddWindowToStack}\n");
 	window->fCurrentStack.SetTo(stack);
 
 	if (decorator != NULL) {
-		DesktopSettings settings(fDesktop);
+		K_DesktopSettings settings(fDesktop);
 		decorator->AddTab(settings, window->Title(), window->Look(),
 			window->Flags(), position, &dirty);
 	}

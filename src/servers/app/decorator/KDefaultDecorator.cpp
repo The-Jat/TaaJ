@@ -36,7 +36,7 @@
 #include <WindowPrivate.h>
 
 #include "BitmapDrawingEngine.h"
-#include "DesktopSettings.h"
+#include "KDesktopSettings.h"
 #include "DrawingEngine.h"
 #include "DrawState.h"
 #include "FontManager.h"
@@ -79,9 +79,9 @@ blend_color_value(uint8 a, uint8 b, float position)
 //	#pragma mark -
 
 
-// TODO: get rid of DesktopSettings here, and introduce private accessor
+// TODO: get rid of K_DesktopSettings here, and introduce private accessor
 //	methods to the K_Decorator base class
-K_DefaultDecorator::K_DefaultDecorator(DesktopSettings& settings, BRect rect,
+K_DefaultDecorator::K_DefaultDecorator(K_DesktopSettings& settings, BRect rect,
 	Desktop* desktop)
 	:
 	K_TabDecorator(settings, rect, desktop)
@@ -196,7 +196,7 @@ debug_printf("[K_DefaultDecorator] {GetComponentColors}\n");
 
 
 void
-K_DefaultDecorator::UpdateColors(DesktopSettings& settings)
+K_DefaultDecorator::UpdateColors(K_DesktopSettings& settings)
 {
 debug_printf("[K_DefaultDecorator] {UpdateColors} \n");
 	K_TabDecorator::UpdateColors(settings);
@@ -510,9 +510,13 @@ K_DefaultDecorator::_DrawResizeKnob(BRect rect, bool full,
 void
 K_DefaultDecorator::_DrawTab(K_Decorator::Tab* tab, BRect invalid)
 {
+debug_printf("[K_DefaultDecorator]_DrawTab(%.1f,%.1f,%.1f,%.1f)\n",
+		invalid.left, invalid.top, invalid.right, invalid.bottom);
 	STRACE(("_DrawTab(%.1f,%.1f,%.1f,%.1f)\n",
 		invalid.left, invalid.top, invalid.right, invalid.bottom));
 	const BRect& tabRect = tab->tabRect;
+	debug_printf("[K_DefaultDecorator] {_DrawTab} tab rect data = BRect(l:%f, t:%f, r:%f, b:%f)\n",
+			 tabRect.left, tabRect.top, tabRect.right - 1, tabRect.bottom - 1);
 	// If a window has a tab, this will draw it and any buttons which are
 	// in it.
 	if (!tabRect.IsValid() || !invalid.Intersects(tabRect))

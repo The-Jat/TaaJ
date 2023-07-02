@@ -33,6 +33,7 @@
 #include "DelayedMessage.h"
 #include "DesktopListener.h"
 #include "DesktopSettings.h"
+#include "KDesktopSettings.h" //khidki
 #include "EventDispatcher.h"
 #include "MessageLooper.h"
 #include "MultiLocker.h"
@@ -493,7 +494,9 @@ void	K__TriggerWindowRedrawing(BRegion& newDirtyRegion);
 
 private:
 	friend class DesktopSettings;
+	friend class K_DesktopSettings; //khidki
 	friend class LockedDesktopSettings;
+	friend class K_LockedDesktopSettings; //khidki
 Painter *fPainter;//mak
 RenderingBuffer* fBuffer;//mak
 public:
@@ -512,10 +515,16 @@ private://mak
 			::VirtualScreen		fVirtualScreen;
 			ObjectDeleter<DesktopSettingsPrivate>
 								fSettings;
+			// khidki start
+			ObjectDeleter<K_DesktopSettingsPrivate>
+								khidkiSettings;
+			// khidki end
 			port_id				fMessagePort;
 			::EventDispatcher	fEventDispatcher;
 			area_id				fSharedReadOnlyArea;
 			server_read_only_memory* fServerReadOnlyMemory;
+			area_id				kSharedReadOnlyArea;// khidki
+			server_read_only_memory* kServerReadOnlyMemory; //khidki
 
 			BLocker				fApplicationsLock;
 			BObjectList<ServerApp> fApplications;

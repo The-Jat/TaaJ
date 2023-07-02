@@ -359,6 +359,67 @@ enum color_which {
 };
 
 
+//khidki start
+enum light_color_scheme_which {
+	K_NO_COLOR = 0,
+	K_PANEL_BACKGROUND_COLOR = 1,
+	K_PANEL_TEXT_COLOR = 10,
+	K_DOCUMENT_BACKGROUND_COLOR = 11,
+	K_DOCUMENT_TEXT_COLOR = 12,
+	K_CONTROL_BACKGROUND_COLOR = 13,
+	K_CONTROL_TEXT_COLOR = 14,
+	K_CONTROL_BORDER_COLOR = 15,
+	K_CONTROL_HIGHLIGHT_COLOR = 16,
+	K_CONTROL_MARK_COLOR = 27,
+	K_NAVIGATION_BASE_COLOR = 4,
+	K_NAVIGATION_PULSE_COLOR = 17,
+	K_SHINE_COLOR = 18,
+	K_SHADOW_COLOR = 19,
+
+	K_LINK_TEXT_COLOR = 33,
+	K_LINK_HOVER_COLOR = 34,
+	K_LINK_VISITED_COLOR = 35,
+	K_LINK_ACTIVE_COLOR = 36,
+
+	K_MENU_BACKGROUND_COLOR = 2,
+	K_MENU_SELECTED_BACKGROUND_COLOR = 6,
+	K_MENU_ITEM_TEXT_COLOR = 7,
+	K_MENU_SELECTED_ITEM_TEXT_COLOR = 8,
+	K_MENU_SELECTED_BORDER_COLOR = 9,
+
+	K_LIST_BACKGROUND_COLOR = 28,
+	K_LIST_SELECTED_BACKGROUND_COLOR = 29,
+	K_LIST_ITEM_TEXT_COLOR = 30,
+	K_LIST_SELECTED_ITEM_TEXT_COLOR = 31,
+
+	K_SCROLL_BAR_THUMB_COLOR = 32,
+
+	K_TOOL_TIP_BACKGROUND_COLOR = 20,
+	K_TOOL_TIP_TEXT_COLOR = 21,
+
+	K_STATUS_BAR_COLOR = 37,
+
+	K_SUCCESS_COLOR = 100,
+	K_FAILURE_COLOR = 101,
+
+	K_WINDOW_TAB_COLOR = 3,
+	K_WINDOW_TEXT_COLOR = 22,
+	K_WINDOW_INACTIVE_TAB_COLOR = 23,
+	K_WINDOW_INACTIVE_TEXT_COLOR = 24,
+
+	K_WINDOW_BORDER_COLOR = 25,
+	K_WINDOW_INACTIVE_BORDER_COLOR = 26,
+
+	// Old name synonyms.
+	K_KEYBOARD_NAVIGATION_COLOR = K_NAVIGATION_BASE_COLOR,
+	K_MENU_SELECTION_BACKGROUND_COLOR = K_MENU_SELECTED_BACKGROUND_COLOR,
+
+	// The following constants are deprecated, do not use in new code.
+	K_DESKTOP_COLOR = 5
+		// see BScreen class for K_DESKTOP_COLOR replacement
+};
+//khidki end
+
 // Color tinting
 
 const float B_LIGHTEN_MAX_TINT	= 0.0f;		// 216 --> 255.0 (255)
@@ -483,6 +544,11 @@ color_which		which_ui_color(const char* name);
 void			set_ui_color(const color_which& which, const rgb_color& color);
 void			set_ui_colors(const BMessage* colors);
 rgb_color		tint_color(rgb_color color, float tint);
+
+// khidki start
+	const char*		get_name_from_light_color_scheme_which(light_color_scheme_which which);
+	light_color_scheme_which		get_light_color_scheme_which_from_name(const char* name);
+// khidki end
 
 extern "C" status_t _init_interface_kit_();
 	// for convenience, should be removed including the friend declarations

@@ -26,7 +26,7 @@
 #include "MultiLocker.h"
 
 class Desktop;
-class DesktopSettings;
+class K_DesktopSettings;
 class DrawingEngine;
 class ServerBitmap;
 class ServerFont;
@@ -103,12 +103,12 @@ public:
 		HIGHLIGHT_USER_DEFINED
 	};
 
-								K_Decorator(DesktopSettings& settings,
+								K_Decorator(K_DesktopSettings& settings,
 											BRect frame,
 											Desktop* desktop);
 	virtual						~K_Decorator();
 
-	virtual	K_Decorator::Tab*		AddTab(DesktopSettings& settings,
+	virtual	K_Decorator::Tab*		AddTab(K_DesktopSettings& settings,
 									const char* title, window_look look,
 									uint32 flags, int32 index = -1,
 									BRegion* updateRegion = NULL);
@@ -128,14 +128,14 @@ public:
 	inline	DrawingEngine*		GetDrawingEngine() const
 									{ return fDrawingEngine; }
 
-			void				FontsChanged(DesktopSettings& settings,
+			void				FontsChanged(K_DesktopSettings& settings,
 									BRegion* updateRegion = NULL);
-			void				ColorsChanged(DesktopSettings& settings,
+			void				ColorsChanged(K_DesktopSettings& settings,
 									BRegion* updateRegion = NULL);
 
-	virtual void				UpdateColors(DesktopSettings& settings) = 0;
+	virtual void				UpdateColors(K_DesktopSettings& settings) = 0;
 
-			void				SetLook(int32 tab, DesktopSettings& settings,
+			void				SetLook(int32 tab, K_DesktopSettings& settings,
 									window_look look,
 									BRegion* updateRegion = NULL);
 			void				SetFlags(int32 tab, uint32 flags,
@@ -206,7 +206,7 @@ public:
 	virtual	void				DrawMinimize(int32 tab);
 	virtual	void				DrawZoom(int32 tab);
 
-			rgb_color			UIColor(color_which which);
+			rgb_color			UIColor(light_color_scheme_which which);
 
 			float				BorderWidth();
 			float				TabHeight();
@@ -248,12 +248,12 @@ protected:
 
 	virtual	K_Decorator::Tab*		_TabAt(int32 index) const;
 
-	virtual void				_FontsChanged(DesktopSettings& settings,
+	virtual void				_FontsChanged(K_DesktopSettings& settings,
 									BRegion* updateRegion = NULL);
-	virtual	void				_UpdateFont(DesktopSettings& settings) = 0;
+	virtual	void				_UpdateFont(K_DesktopSettings& settings) = 0;
 
 	virtual void				_SetLook(K_Decorator::Tab* tab,
-									DesktopSettings& settings,
+									K_DesktopSettings& settings,
 									window_look look,
 									BRegion* updateRegion = NULL);
 	virtual void				_SetFlags(K_Decorator::Tab* tab, uint32 flags,
@@ -269,7 +269,7 @@ protected:
 	virtual bool				_SetSettings(const BMessage& settings,
 									BRegion* updateRegion = NULL);
 
-	virtual	bool				_AddTab(DesktopSettings& settings,
+	virtual	bool				_AddTab(K_DesktopSettings& settings,
 									int32 index = -1,
 									BRegion* updateRegion = NULL) = 0;
 	virtual	bool				_RemoveTab(int32 index,
