@@ -162,6 +162,23 @@ rule PrivateHeaders
 }
 
 
+rule HeadHeaders
+{
+	# HeadHeaders <group list>
+	#
+	# Returns the directory names for the private header dirs identified by
+	# <group list>.
+
+	local list = $(1) ;
+	local dirs ;
+	local i ;
+	for i in $(list) {
+		dirs += [ FDirName $(HAIKU_TOP) head $(i) ] ;
+	}
+	return $(dirs) ;
+}
+
+
 rule PrivateBuildHeaders
 {
 	# PrivateBuildHeaders <group list>
@@ -268,6 +285,23 @@ rule UsePrivateHeaders
 	system ?= true ;
 
 	UseHeaders [ PrivateHeaders $(1) ] : $(system) ;
+}
+
+
+rule UseHeadHeaders
+{
+	# UseHeadHeaders <group list> [ : <system> ] ;
+	#
+	# Adds the head C header dirs given by <group list> to the header search
+	# dirs of the subdirectory.
+	# <system> specifies whether to add the dirs as system or local header
+	# search dirs. Defaults to "true".
+	# NOTE: This rule must be invoked *before* the rule that builds the objects.
+
+	local system = $(2) ;
+	system ?= true ;
+
+	UseHeaders [ HeadHeaders $(1) ] : $(system) ;
 }
 
 

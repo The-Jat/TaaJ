@@ -19,6 +19,7 @@ if $(RUN_WITHOUT_APP_SERVER) != 0 {
 
 SetSubDirSupportedPlatforms haiku libbe_test ;
 
+UseHeadHeaders config ; # For config directory in head directory.
 UseLibraryHeaders agg ;
 UsePrivateHeaders app input print interface locale shared support tracker ;
 

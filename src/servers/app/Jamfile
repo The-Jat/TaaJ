@@ -1,5 +1,6 @@
 SubDir HAIKU_TOP src servers app ;
 
+UseHeadHeaders config ; # For config directory in head directory.
 UseLibraryHeaders agg ;
 UsePrivateHeaders app graphics input interface kernel shared storage support ;
 

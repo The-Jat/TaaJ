@@ -57,14 +57,13 @@
 #include <input_globals.h>
 #include <tracker_private.h>
 
-
+#include <TheConfig.h> // configuration file.
 //khidki code
 //start
-//#define TRACE_DEBUG_SERVER
-#ifdef TRACE_DEBUG_SERVER
-#	define TTRACE(x) debug_printf x
+#if defined(OVERRIDE_DEBUGGING) || defined(DEBUG_KHIDKI)
+#	define DEBUG(x) debug_printf x
 #else
-#	define TTRACE(x) ;
+#	define DEBUG(x) ;
 #endif
 //end
 
@@ -313,18 +312,17 @@ KWindow::KWindow(/*Int_Rect*/BRect frame, const char* title, window_type type,
 	:
 	BLooper(title, B_DISPLAY_PRIORITY)
 {
-debug_printf("[KWindow] Into the KWindow constructor.\n");
-debug_printf("[KWindow] workspace = %d\n",workspace);
+DEBUG(("[KWindow] Into the KWindow constructor.\n"));
+DEBUG(("[KWindow] workspace = %d\n",workspace));
 	window_look look;
 	window_feel feel;
 
 	_DecomposeType(type, &look, &feel);
-debug_printf("[KWindow] window_type =%d\n", (int)type);
-debug_printf("[KWindow] window_look =%d\n", (int)look);
-debug_printf("[KWindow] window_feel =%d\n", (int)feel);
+DEBUG(("[KWindow] window_type =%d\n", (int)type));
+DEBUG(("[KWindow] window_feel =%d\n", (int)feel));
 
 	_InitData(frame, title, look, feel, flags, workspace);
-debug_printf("[KWindow]  KWindow constructor ends.\n");
+DEBUG(("[KWindow]  KWindow constructor ends.\n"));
 }
 
 

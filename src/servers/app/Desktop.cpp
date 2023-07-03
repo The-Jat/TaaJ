@@ -69,6 +69,7 @@
 #	include "EventStream.h"
 #endif
 
+#include <TheConfig.h> // configuration file.
 
 //#define DEBUG_DESKTOP
 #ifdef DEBUG_DESKTOP
@@ -76,6 +77,17 @@
 #else
 #	define STRACE(a) ;
 #endif
+
+//khidki code
+//start
+#if defined(OVERRIDE_DEBUGGING) || defined(DEBUG_DESKTOP)
+#	define DEBUG(x) debug_printf x
+#	define STATEMENT(x) x
+#else
+#	define DEBUG(x) ;
+#	define STATEMENT(x) ;
+#endif
+//end
 
 #define TESTING__BWindow //khidki
 #define DEBUG_DESKTOP_K_Window//khidki
@@ -202,7 +214,7 @@ KeyboardFilter::_UpdateFocus(int32 key, uint32 modifiers, EventTarget** _target)
 void
 KeyboardFilter::K__UpdateFocus(int32 key, uint32 modifiers, EventTarget** _target)
 {
-debug_printf("[KeyboardFilter]{K__UpdateFocus}\n");
+DEBUG(("[KeyboardFilter]{K__UpdateFocus}\n"));
 
 	if (!fDesktop->LockSingleWindow())
 		return;
@@ -408,24 +420,24 @@ MouseFilter::Filter(BMessage* message, EventTarget** _target, int32* _viewToken,
 	if (window1 == NULL)
 	{
 	//#ifdef TESTING
-	debug_printf("[MouseFilter]{Filter}window1==NULL\n");
+	DEBUG(("[MouseFilter]{Filter}window1==NULL\n"));
 	//#endif
 		window1 = fDesktop->K_WindowAt(where);
 	}
 //end
 
 	if (window != NULL) {
-		debug_printf("[MouseFilter]{Filter}window != NULL\n");
+		DEBUG(("[MouseFilter]{Filter}window != NULL\n"));
 		// dispatch event to the window
 		switch (message->what) {
 			case B_MOUSE_DOWN:
 			{
 			//#ifdef TESTING
-			debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN\n");
+			DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN\n"));
 			//#endif
 				int32 windowToken = window->ServerWindow()->ServerToken();
 //#ifdef TESTING
-debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN windowToken=%d\n",windowToken);
+DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN windowToken=%d\n",windowToken));
 //#endif
 				//int32 windowToken1 = window1->KServerWindow()->ServerToken();//khidki
 
@@ -445,7 +457,7 @@ debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN windowToken=%d\n",windowToken);
 //int32 clickCount1 = originalClickCount;//khidki
 				if (clickCount > 1) {
 					//#ifdef TESTING
-					debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN clickCount>1\n");
+					DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN clickCount>1\n"));
 					//#endif
 					if (modifiers != fLastClickModifiers
 						|| buttons != fLastClickButtons
@@ -453,14 +465,14 @@ debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN windowToken=%d\n",windowToken);
 						|| fLastClickTarget.WindowToken() != windowToken
 						|| square_distance(where, fLastClickPoint) >= 16
 						|| clickCount - fResetClickCount < 1) {
-						debug_printf("[MouseFilter]{Filter}clickCount=1\n");
+						DEBUG(("[MouseFilter]{Filter}clickCount=1\n"));
 						clickCount = 1;
 					} else
 						clickCount -= fResetClickCount;
 				}
 
 				//#ifdef TESTING
-				debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN after if \n");
+				DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN after if \n"));
 				//#endif
 				// notify the window
 				ClickTarget clickTarget;
@@ -469,9 +481,9 @@ debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN windowToken=%d\n",windowToken);
 
 //khidki start
 /*
-debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN khidki start\n");
+DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN khidki start\n"));
 	ClickTarget clickTarget1;
-debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN khidki after clickTarget1\n");
+DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN khidki after clickTarget1\n"));
 window1->MouseDown(message, where, k_fLastClickTarget, clickCount1,
 					clickTarget1);
 
@@ -514,7 +526,7 @@ window1->MouseDown(message, where, k_fLastClickTarget, clickCount1,
 
 			case B_MOUSE_MOVED:
 				//#ifdef TESTING
-				debug_printf("[MouseFilter]{Filter}B_MOUSE_MOVED\n");
+				DEBUG(("[MouseFilter]{Filter}B_MOUSE_MOVED\n"));
 				//#endif
 				window->MouseMoved(message, where, &viewToken,
 					latestMouseMoved == NULL || latestMouseMoved == message,
@@ -525,7 +537,7 @@ window1->MouseDown(message, where, k_fLastClickTarget, clickCount1,
 
 		if (viewToken != B_NULL_TOKEN) {
 			//#ifdef TESTING
-			debug_printf("[MouseFilter]{Filter}viewToken != B_NULL_TOKEN\n");
+			DEBUG(("[MouseFilter]{Filter}viewToken != B_NULL_TOKEN\n"));
 			//#endif
 			fDesktop->SetViewUnderMouse(window, viewToken);
 
@@ -534,7 +546,7 @@ window1->MouseDown(message, where, k_fLastClickTarget, clickCount1,
 		}
 	} /*else if (message->what == B_MOUSE_DOWN) {
 		//#ifdef TESTING
-		debug_printf("[MouseFilter]{Filter} message-> what == B_MOUSE_DOWN\n");
+		DEBUG(("[MouseFilter]{Filter} message-> what == B_MOUSE_DOWN\n"));
 		//#endif
 		// the mouse-down didn't hit a window -- reset the click target
 		fResetClickCount = 0;
@@ -546,21 +558,21 @@ window1->MouseDown(message, where, k_fLastClickTarget, clickCount1,
 	// Khidki start
 	else if ( window1 != NULL) {
 		//#ifdef TESTING
-		debug_printf("[MouseFilter]{Filter} window1 != NULL\n");
+		DEBUG(("[MouseFilter]{Filter} window1 != NULL\n"));
 		//#endif
 		// dispatch event to the window
 		switch (message->what) {
 			case B_MOUSE_DOWN:
 			{
 			//#ifdef TESTING
-			debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2\n");
+			DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN2\n"));
 			//#endif
 
 				//int32 windowToken = window->ServerWindow()->ServerToken();
 
 				int32 windowToken = window1->KServerWindow()->ServerToken();//khidki
 //#ifdef TESTING
-debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 windowToken1\n");
+DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN2 windowToken1\n"));
 //#endif
 				// First approximation of click count validation. We reset the
 				// click count when modifiers or pressed buttons have changed
@@ -578,7 +590,7 @@ debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 windowToken1\n");
 //int32 clickCount1 = originalClickCount;//khidki
 				if (clickCount > 1) {
 				//#ifdef TESTING
-				debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 clickCount>1\n");
+				DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN2 clickCount>1\n"));
 				//#endif
 					if (modifiers != fLastClickModifiers
 						|| buttons != fLastClickButtons
@@ -587,14 +599,14 @@ debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 windowToken1\n");
 		//|| k_fLastClickTarget.WindowToken() != windowToken1//khidki
 						|| square_distance(where, fLastClickPoint) >= 16
 						|| clickCount - fResetClickCount < 1) {
-						debug_printf("[MouseFilter]{Filter}clickCount=1\n");
+						DEBUG(("[MouseFilter]{Filter}clickCount=1\n"));
 						clickCount = 1;
 					} else
 						clickCount -= fResetClickCount;
 				}
 				
 				//#ifdef TESTING
-				debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 after if \n");
+				DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN2 after if \n"));
 				//#endif
 				// notify the window
 				/*ClickTarget clickTarget;
@@ -603,17 +615,17 @@ debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 windowToken1\n");
 
 //khidki start
 //#ifdef TESTING
-debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 khidki start\n");
+DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN2 khidki start\n"));
 //#endif
 	ClickTarget clickTarget;
 //#ifdef TESTING
-debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 khidki after clickTarget1\n");
+DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN2 khidki after clickTarget1\n"));
 //#endif
 window1->MouseDown(message, where, k_fLastClickTarget, clickCount,
 					clickTarget);
-debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 after window1->MouseDown\n");
-//debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 k_fLastClickTarget = %d\n",k_fLastClickTarget);
-debug_printf("[MouseFilter]{Filter}B_MOUSE_DOWN2 clickCount=%d\n",clickCount);
+DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN2 after window1->MouseDown\n"));
+//DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN2 k_fLastClickTarget = %d\n",k_fLastClickTarget);
+DEBUG(("[MouseFilter]{Filter}B_MOUSE_DOWN2 clickCount=%d\n",clickCount));
 //end
 
 				// If the click target changed, always reset the click count.
@@ -647,7 +659,7 @@ fDesktop->K_NotifyMouseDown(window1, message, where);//khidki
 			}
 
 			case B_MOUSE_UP:
-				debug_printf("[MouseFilter]{Filter}B_MOUSE_UP2\n");
+				DEBUG(("[MouseFilter]{Filter}B_MOUSE_UP2\n"));
 				window1->MouseUp(message, where, &viewToken);
 				if (buttons == 0)
 					fDesktop->K_SetMouseEventWindow(NULL);
@@ -656,7 +668,7 @@ fDesktop->K_NotifyMouseDown(window1, message, where);//khidki
 
 			case B_MOUSE_MOVED:
 				//#ifdef TESTING
-				debug_printf("[MouseFilter]{Filter}B_MOUSE_MOVED2\n");
+				DEBUG(("[MouseFilter]{Filter}B_MOUSE_MOVED2\n"));
 				//#endif
 				window1->MouseMoved(message, where, &viewToken,
 					latestMouseMoved == NULL || latestMouseMoved == message,
@@ -673,7 +685,7 @@ fDesktop->K_NotifyMouseDown(window1, message, where);//khidki
 		}
 	}else if (message->what == B_MOUSE_DOWN) {
 		//#ifdef TESTING
-		debug_printf("[MouseFilter]{Filter} message-> what == B_MOUSE_DOWN\n");
+		DEBUG(("[MouseFilter]{Filter} message-> what == B_MOUSE_DOWN\n"));
 		//#endif
 		// the mouse-down didn't hit a window -- reset the click target
 		fResetClickCount = 0;
@@ -691,7 +703,7 @@ fDesktop->K_NotifyMouseDown(window1, message, where);//khidki
 //original (window == NULL || viewToken == B_NULL_TOKEN)
 	if ((window == NULL || window1 == NULL) && viewToken == B_NULL_TOKEN) {
 		//#ifdef TESTING
-		debug_printf("[MouseFilter]{Filter} (window==NULL || window1==NULL) && viewToken==B_NULL_TOKEN\n");
+		DEBUG(("[MouseFilter]{Filter} (window==NULL || window1==NULL) && viewToken==B_NULL_TOKEN\n"));
 		//#endif
 		// mouse is not over a window or over a decorator
 		fDesktop->SetViewUnderMouse(window, B_NULL_TOKEN);
@@ -708,7 +720,7 @@ fDesktop->K_NotifyMouseDown(window1, message, where);//khidki
 
 	fDesktop->K_NotifyMouseEvent(message);//khidki
 
-debug_printf("[MouseFilter]{Filter} end\n");
+DEBUG(("[MouseFilter]{Filter} end\n"));
 
 	fDesktop->UnlockAllWindows();
 
@@ -721,7 +733,7 @@ filter_result
 MouseFilter::K_Filter(BMessage* message, EventTarget** _target, int32* _viewToken,
 	BMessage* latestMouseMoved)
 {
-debug_printf("[MouseFilter]{K_Filter}\n");
+DEBUG(("[MouseFilter]{K_Filter}\n"));
 
 	BPoint where;
 	if (message->FindPoint("where", &where) != B_OK)
@@ -741,7 +753,7 @@ debug_printf("[MouseFilter]{K_Filter}\n");
 		window = fDesktop->K_WindowAt(where);
 
 	if (window != NULL) {
-	debug_printf("[MouseFilter]{K_Filter} window != NULL\n");
+	DEBUG(("[MouseFilter]{K_Filter} window != NULL\n"));
 		// dispatch event to the window
 		switch (message->what) {
 			case B_MOUSE_DOWN:
@@ -868,8 +880,8 @@ workspace_to_workspaces(int32 index)
 static inline bool
 workspace_in_workspaces(int32 index, uint32 workspaces)
 {
-debug_printf("[Desktop] {workspace_in_workspaces} index = %d, workspaces = %d \n", index, workspaces);
-debug_printf("[Desktop] {workspace_in_workspaces (workspaces & (1UL << index)) != 0 = %d\n", (workspaces & (1UL << index)) != 0);
+DEBUG(("[Desktop] {workspace_in_workspaces} index = %d, workspaces = %d \n", index, workspaces));
+DEBUG(("[Desktop] {workspace_in_workspaces (workspaces & (1UL << index)) != 0 = %d\n", (workspaces & (1UL << index)) != 0));
 	return (workspaces & (1UL << index)) != 0;
 }
 
@@ -925,6 +937,7 @@ k_fFocus(NULL),
 k_fFront(NULL),
 k_fBack(NULL)
 {
+	DEBUG(("[Desktop] {constructor} entered \n"));
 	memset(fLastWorkspaceFocus, 0, sizeof(fLastWorkspaceFocus));
 memset(k_fLastWorkspaceFocus, 0, sizeof(k_fLastWorkspaceFocus));//khidki
 
@@ -948,14 +961,14 @@ memset(k_fLastWorkspaceFocus, 0, sizeof(k_fLastWorkspaceFocus));//khidki
  //khidki start
 	K_RegisterListener(&k_fStackAndTile);
 
-debug_printf("[Desktop] {constructor} before registering K_RegisterListener \n");
+DEBUG(("[Desktop] {constructor} before registering K_RegisterListener \n"));
 const K_DesktopListenerList& k_newListeners
 		= k_gDecorManager.GetDesktopListeners();
-debug_printf("[Desktop] {constructor} k_newListeners.countItems=%d \n",k_newListeners.CountItems());
+DEBUG(("[Desktop] {constructor} k_newListeners.countItems=%d \n",k_newListeners.CountItems()));
 	for (int i = 0; i < k_newListeners.CountItems(); i++)
  		K_RegisterListener(k_newListeners.ItemAt(i));
 
-debug_printf("[Desktop] {constructor} after registering K_RegisterListener \n");
+DEBUG(("[Desktop] {constructor} after registering K_RegisterListener \n"));
 //end
 }
 
@@ -982,7 +995,7 @@ Desktop::RegisterListener(DesktopListener* listener)
 void
 Desktop::K_RegisterListener(K_DesktopListener* listener)
 {
-debug_printf("[Desktop] {K_RegisterListener} \n");
+DEBUG(("[Desktop] {K_RegisterListener} \n"));
 	K_DesktopObservable::K_RegisterListener(listener, this);
 }
 //end
@@ -1032,13 +1045,13 @@ Desktop::Init()
 	status_t status = fVirtualScreen.SetConfiguration(*this,
 		fWorkspaces[0].CurrentScreenConfiguration());
 	if (status != B_OK) {
-		debug_printf("app_server: Failed to initialize virtual screen configuration: %s\n",
-			strerror(status));
+		DEBUG(("app_server: Failed to initialize virtual screen configuration: %s\n",
+			strerror(status)));
 		return status;
 	}
 
 	if (fVirtualScreen.HWInterface() == NULL) {
-		debug_printf("Could not initialize graphics output. Exiting.\n");
+		DEBUG(("Could not initialize graphics output. Exiting.\n"));
 		return B_ERROR;
 	}
 
@@ -1137,9 +1150,9 @@ ptr++;
 void Desktop::draw_physical_pixel(const Int_Point& physical_position, int color)
 {
 unsigned int *fb=(unsigned int *)fPainter->fb_addr();
-debug_printf("draw_physical_pixel...\n");
-debug_printf("width=%d",fPainter->get_width());
-debug_printf("height=%d",fPainter->get_height());
+DEBUG(("draw_physical_pixel...\n"));
+DEBUG(("width=%d",fPainter->get_width()));
+DEBUG(("height=%d",fPainter->get_height()));
 int temp=physical_position.y()*fPainter->get_width()+physical_position.x();
 fb=fb+temp;
 *fb=0xff0000ff;
@@ -1312,7 +1325,7 @@ void
 Desktop::K_BroadcastToAllWindows(int32 code)
 {
 #ifdef TESTING__BWindow
-	debug_printf("[Desktop]{K_BroadcastToAllWindows}\n");
+	DEBUG(("[Desktop]{K_BroadcastToAllWindows}\n"));
 #endif
 
 	AutoReadLocker _(fWindowLock);
@@ -1323,7 +1336,7 @@ Desktop::K_BroadcastToAllWindows(int32 code)
 	}
 
 #ifdef TESTING__BWindow
-	debug_printf("[Desktop]{BroadcastToAllWindows}\n");
+	DEBUG(("[Desktop]{BroadcastToAllWindows}\n"));
 #endif
 }
 
@@ -1402,7 +1415,7 @@ Desktop::KeyEvent(uint32 what, int32 key, int32 modifiers)
 filter_result
 Desktop::K_KeyEvent(uint32 what, int32 key, int32 modifiers)
 {
-debug_printf("[Desktop]{K_KeyEvent}\n");
+DEBUG(("[Desktop]{K_KeyEvent}\n"));
 
 	filter_result result = B_DISPATCH_MESSAGE;
 	if (LockAllWindows()) {
@@ -1485,22 +1498,22 @@ void
 Desktop::K_SetLastMouseState(const BPoint& position, int32 buttons,
 	K_Window* windowUnderMouse)
 {
-debug_printf("[Desktop]{K_SetLastMouseState}\n");
+DEBUG(("[Desktop]{K_SetLastMouseState}\n"));
 
 	// The all-window-lock is write-locked.
 	fLastMousePosition = position;
 	fLastMouseButtons = buttons;
 
 	if (fLastMouseButtons == 0 && k_fLockedFocusWindow) {
-	debug_printf("[Desktop]{K_SetLastMouseState} fLastMouseButtons == 0 && fLockedFocusWindow\n");
+	DEBUG(("[Desktop]{K_SetLastMouseState} fLastMouseButtons == 0 && fLockedFocusWindow\n"));
 		k_fLockedFocusWindow = NULL;
 		if (fSettings->FocusFollowsMouse())
 		{
-		debug_printf("[Desktop]{K_SetLastMouseState} fSettings->FocusFollowsMouse\n");
+		DEBUG(("[Desktop]{K_SetLastMouseState} fSettings->FocusFollowsMouse\n"));
 			K_SetFocusWindow(windowUnderMouse);
 		}
 	}
-debug_printf("[Desktop]{K_SetLastMouseState}end\n");
+DEBUG(("[Desktop]{K_SetLastMouseState}end\n"));
 }
 //end
 
@@ -1770,7 +1783,7 @@ Desktop::SetWorkspaceAsync(int32 index, bool moveFocusWindow)
 void
 Desktop::K_SetWorkspaceAsync(int32 index, bool moveFocusWindow)
 {
-debug_printf("[Desktop]{K_SetWorkspaceAsync}\n");
+DEBUG(("[Desktop]{K_SetWorkspaceAsync}\n"));
 
 	BPrivate::LinkSender link(MessagePort());
 	link.StartMessage(AS_ACTIVATE_WORKSPACE);
@@ -1889,7 +1902,7 @@ Desktop::AddWorkspacesView(WorkspacesView* view)
 void
 Desktop::K_AddWorkspacesView(K_WorkspacesView* view)
 {
-debug_printf("[Desktop] {K_AddWorkspacesView}");
+DEBUG(("[Desktop] {K_AddWorkspacesView}"));
 
 	if (view->K_Window() == NULL || view->K_Window()->IsHidden())
 		return;
@@ -1945,11 +1958,11 @@ Desktop::SelectWindow(Window* window)
 void
 Desktop::K_SelectWindow(K_Window* window)
 {
-debug_printf("[Desktop] {K_SelectWindow} \n");
+DEBUG(("[Desktop] {K_SelectWindow} \n"));
 
 	if (fSettings->ClickToFocusMouse()) {
 	#ifdef TESTING__BWindow
-	debug_printf("[Desktop]{SelectWindow}fSettings->ClickToFocusWindow\n");
+	DEBUG(("[Desktop]{SelectWindow}fSettings->ClickToFocusWindow\n"));
 	#endif
 		// Only bring the window to front when it is not the window under the
 		// mouse pointer. This should result in sensible behaviour.
@@ -1962,7 +1975,7 @@ debug_printf("[Desktop] {K_SelectWindow} \n");
 		K_ActivateWindow(window);
 
 
-debug_printf("[Desktop] {K_SelectWindow} end\n");
+DEBUG(("[Desktop] {K_SelectWindow} end\n"));
 }
 //end
 
@@ -2112,7 +2125,7 @@ Desktop::ActivateWindow(Window* window)
 void
 Desktop::K_ActivateWindow(K_Window* window)
 {
-debug_printf("[Desktop] {K_ActivateWindow}\n");
+DEBUG(("[Desktop] {K_ActivateWindow}\n"));
 
 	STRACE(("ActivateWindow(%p, %s)\n", window, window
 		? window->Title() : "<none>"));
@@ -2127,26 +2140,26 @@ debug_printf("[Desktop] {K_ActivateWindow}\n");
 
 	AutoWriteLocker allWindowLocker(fWindowLock);
 
-debug_printf("[Desktop] {K_ActivateWindow} before K_NotifyWindowActivated\n");
+DEBUG(("[Desktop] {K_ActivateWindow} before K_NotifyWindowActivated\n"));
 	K_NotifyWindowActivated(window);
-debug_printf("[Desktop] {K_ActivateWindow} after K_NotifyWindowActivated\n");
+DEBUG(("[Desktop] {K_ActivateWindow} after K_NotifyWindowActivated\n"));
 
 	bool windowOnOtherWorkspace = !window->InWorkspace(fCurrentWorkspace);
-debug_printf("[Desktop] {K_ActivateWindow} windowOnotherWorkspace =%d\n",windowOnOtherWorkspace);
+DEBUG(("[Desktop] {K_ActivateWindow} windowOnotherWorkspace =%d\n",windowOnOtherWorkspace));
 
 
 	if (windowOnOtherWorkspace
 		&& (window->Flags() & B_NOT_ANCHORED_ON_ACTIVATE) == 0) {
-debug_printf("[Desktop] {K_ActivateWindow} in windowOnOtherWorkspace && (window->Flags() & B_NOT_ANCHORED_ON_ACTIVATE) == 0 \n");
+DEBUG(("[Desktop] {K_ActivateWindow} in windowOnOtherWorkspace && (window->Flags() & B_NOT_ANCHORED_ON_ACTIVATE) == 0 \n"));
 
 		if ((window->Flags() & B_NO_WORKSPACE_ACTIVATION) == 0) {
 			// Switch to the workspace on which this window is
 			// (we'll take the first one that the window is on)
 
-debug_printf("[Desktop] {K_ActivateWindow} window->Flags() & B_NO_WORKSPACE_ACTIVATION) == 0 \n");
+DEBUG(("[Desktop] {K_ActivateWindow} window->Flags() & B_NO_WORKSPACE_ACTIVATION) == 0 \n"));
 
 			uint32 workspaces = window->Workspaces();
-			debug_printf("[Desktop] {K_ActivateWindow} workspaces =%d\n",workspaces);
+			DEBUG(("[Desktop] {K_ActivateWindow} workspaces =%d\n",workspaces));
 			for (int32 i = 0; i < fSettings->WorkspacesCount(); i++) {
 				uint32 workspace = workspace_to_workspaces(i);
 				if (workspaces & workspace) {
@@ -2161,10 +2174,10 @@ debug_printf("[Desktop] {K_ActivateWindow} window->Flags() & B_NO_WORKSPACE_ACTI
 
 	if (windowOnOtherWorkspace) {
 
-	debug_printf("[Desktop] {K_ActivateWindow} if statement windowOnotherWorkspace \n");
+	DEBUG(("[Desktop] {K_ActivateWindow} if statement windowOnotherWorkspace \n"));
 
 		if (!window->IsNormal()) {
-			debug_printf("[Desktop] {K_ActivatedWindow} !window->IsNormal() \n");
+			DEBUG(("[Desktop] {K_ActivatedWindow} !window->IsNormal() \n"));
 			// Bring a window to front that this floating window belongs to
 			K_Window* front = K__LastFocusSubsetWindow(window);
 			if (front == NULL) {
@@ -2179,7 +2192,7 @@ debug_printf("[Desktop] {K_ActivateWindow} window->Flags() & B_NO_WORKSPACE_ACTI
 				return;
 			}
 		} else {
-			debug_printf("[Desktop] {K_ActivateWindow} else statement of !window->IsNormal() \n");
+			DEBUG(("[Desktop] {K_ActivateWindow} else statement of !window->IsNormal() \n"));
 			// Bring the window to the current workspace
 			// TODO: what if this window is on multiple workspaces?!?
 			uint32 workspaces = workspace_to_workspaces(fCurrentWorkspace);
@@ -2188,7 +2201,7 @@ debug_printf("[Desktop] {K_ActivateWindow} window->Flags() & B_NO_WORKSPACE_ACTI
 	}
 
 	if (window->IsMinimized()) {
-		debug_printf("[Desktop] {K_ActivateWindow} window->IsMinimized() \n");
+		DEBUG(("[Desktop] {K_ActivateWindow} window->IsMinimized() \n"));
 		// Unlike WindowAction(), this is called from the application itself,
 		// so we will just unminimize the window here.
 		window->SetMinimized(false);
@@ -2196,7 +2209,7 @@ debug_printf("[Desktop] {K_ActivateWindow} window->Flags() & B_NO_WORKSPACE_ACTI
 	}
 
 	if (window == K_FrontWindow()) {
-	debug_printf("[Desktop] {K_ActivateWindow} window == K_FrontWindow\n");
+	DEBUG(("[Desktop] {K_ActivateWindow} window == K_FrontWindow\n"));
 		// see if there is a normal B_AVOID_FRONT window still in front of us
 		K_Window* avoidsFront = window->NextWindow(fCurrentWorkspace);
 		while (avoidsFront && avoidsFront->IsNormal()
@@ -2205,7 +2218,7 @@ debug_printf("[Desktop] {K_ActivateWindow} window->Flags() & B_NO_WORKSPACE_ACTI
 		}
 
 		if (avoidsFront == NULL) {
-			debug_printf("[Desktop] {K_ActivateWindow} avoidsFront == NULL\n");
+			DEBUG(("[Desktop] {K_ActivateWindow} avoidsFront == NULL\n"));
 			// we're already the frontmost window, we might just not have focus
 			// yet
 			if ((window->Flags() & B_AVOID_FOCUS) == 0)
@@ -2214,10 +2227,10 @@ debug_printf("[Desktop] {K_ActivateWindow} window->Flags() & B_NO_WORKSPACE_ACTI
 		}
 	}
 
-debug_printf("[Desktop] {K_ActivateWindow} before k_kWorkingList\n");
+DEBUG(("[Desktop] {K_ActivateWindow} before k_kWorkingList\n"));
 	K_WindowList windows(k_kWorkingList);
-debug_printf("[Desktop] {K_ActivatedWindow} K_WindowList Count=%d\n",windows.Count());
-debug_printf("[Desktop] {K_ActivateWindow} after k_kWorkingList\n");
+DEBUG(("[Desktop] {K_ActivatedWindow} K_WindowList Count=%d\n",windows.Count()));
+DEBUG(("[Desktop] {K_ActivateWindow} after k_kWorkingList\n"));
 	K_Window* frontmost = window->Frontmost();
 	const K_Window* lastWindowUnderMouse = k_fWindowUnderMouse;
 
@@ -2249,7 +2262,7 @@ debug_printf("[Desktop] {K_ActivateWindow} after k_kWorkingList\n");
 
 	if ((window->Flags() & B_AVOID_FOCUS) == 0)
 	{
-	debug_printf("[Desktop] {K_ActivateWindow} (window->Flags() & B_AVOID_FOCUS) == 0 \n");
+	DEBUG(("[Desktop] {K_ActivateWindow} (window->Flags() & B_AVOID_FOCUS) == 0 \n"));
 	
 		K_SetFocusWindow(window);
 	}
@@ -2261,7 +2274,7 @@ debug_printf("[Desktop] {K_ActivateWindow} after k_kWorkingList\n");
 	if (sendFakeMouseMoved)
 		K__SendFakeMouseMoved();
 
-debug_printf("[Desktop] {K_ActivateWindow}ends\n");
+DEBUG(("[Desktop] {K_ActivateWindow}ends\n"));
 }
 //end
 
@@ -2343,7 +2356,7 @@ Desktop::SendWindowBehind(Window* window, Window* behindOf, bool sendStack)
 void
 Desktop::K_SendWindowBehind(K_Window* window, K_Window* behindOf, bool sendStack)
 {
-debug_printf("[Desktop]{K_SendWindowBehind}\n");
+DEBUG(("[Desktop]{K_SendWindowBehind}\n"));
 
 	if (!LockAllWindows())
 		return;
@@ -2459,7 +2472,7 @@ Desktop::ShowWindow(Window* window)
 void
 Desktop::K_ShowWindow(K_Window* window)
 {
-debug_printf("[Desktop] {K_ShowWindow} \n");
+DEBUG(("[Desktop] {K_ShowWindow} \n"));
 	if (!window->IsHidden())
 		return;
 
@@ -2473,7 +2486,7 @@ debug_printf("[Desktop] {K_ShowWindow} \n");
 	// subset is.
 	if (window->InWorkspace(fCurrentWorkspace)
 		|| (window->IsFloating() && K__LastFocusSubsetWindow(window) != NULL)) {
-		debug_printf("[Desktop] {K_ShowWindow} window is in current workspace. \n");
+		DEBUG(("[Desktop] {K_ShowWindow} window is in current workspace. \n"));
 		K__ShowWindow(window, true);
 		K__UpdateSubsetWorkspaces(window);
 		K_ActivateWindow(window);
@@ -2484,7 +2497,7 @@ debug_printf("[Desktop] {K_ShowWindow} \n");
 	}
 
 	if (window->HasWorkspacesViews()) {
-	debug_printf("[Desktop] {K_ShowWindow} window->HasWorkspacesViews()\n");
+	DEBUG(("[Desktop] {K_ShowWindow} window->HasWorkspacesViews()\n"));
 		// find workspaces views in view hierarchy
 		BAutolock _(fWorkspacesLock);
 		window->FindWorkspacesViews(k_fWorkspacesViews);
@@ -2496,7 +2509,7 @@ debug_printf("[Desktop] {K_ShowWindow} \n");
 
 	K__SendFakeMouseMoved(window);
 
-debug_printf("[Desktop] {K_ShowWindow} ends\n");
+DEBUG(("[Desktop] {K_ShowWindow} ends\n"));
 }
 //end
 
@@ -2564,7 +2577,7 @@ Desktop::HideWindow(Window* window, bool fromMinimize)
 void
 Desktop::K_HideWindow(K_Window* window, bool fromMinimize)
 {
-debug_printf("[Desktop] {K_HideWindow} \n");
+DEBUG(("[Desktop] {K_HideWindow} \n"));
 
 	if (window->IsHidden())
 		return;
@@ -2576,7 +2589,7 @@ debug_printf("[Desktop] {K_HideWindow} \n");
 	k_fFocusList.RemoveWindow(window);
 
 	if (k_fMouseEventWindow == window) {
-	debug_printf("[Desktop] {K_HideWindow} k_fMouseEventWindow == window\n");
+	DEBUG(("[Desktop] {K_HideWindow} k_fMouseEventWindow == window\n"));
 		// Make its decorator lose the current mouse action
 		BMessage message;
 		int32 viewToken;
@@ -2586,13 +2599,13 @@ debug_printf("[Desktop] {K_HideWindow} \n");
 	}
 
 	if (k_fLockedFocusWindow == window) {
-	debug_printf("[Desktop] {K_HideWindow} k_fLockedFocusWindow == window\n");
+	DEBUG(("[Desktop] {K_HideWindow} k_fLockedFocusWindow == window\n"));
 		// Remove the focus lock so the focus can be changed below
 		k_fLockedFocusWindow = NULL;
 	}
 
 	if (window->InWorkspace(fCurrentWorkspace)) {
-	debug_printf("[Desktop] {K_HideWindow} window->InWorkspace(fCurrentWorkspace)\n");
+	DEBUG(("[Desktop] {K_HideWindow} window->InWorkspace(fCurrentWorkspace)\n"));
 		K__UpdateSubsetWorkspaces(window);
 		K__HideWindow(window);
 		K__UpdateFronts();
@@ -2600,14 +2613,14 @@ debug_printf("[Desktop] {K_HideWindow} \n");
 		K__WindowChanged(window);
 
 	if (K_FocusWindow() == window){
-	debug_printf("[Desktop] {K_HideWindow} K_FocusWindow() == window\n");
+	DEBUG(("[Desktop] {K_HideWindow} K_FocusWindow() == window\n"));
 		K_SetFocusWindow();
 	}
 
 	K__WindowRemoved(window);
 
 	if (window->HasWorkspacesViews()) {
-	debug_printf("[Desktop] {K_HideWindow} window->HasWorkspacesViews()\n");
+	DEBUG(("[Desktop] {K_HideWindow} window->HasWorkspacesViews()\n"));
 		// remove workspaces views from this window
 		BObjectList<K_WorkspacesView> list(false);
 		window->FindWorkspacesViews(list);
@@ -2615,7 +2628,7 @@ debug_printf("[Desktop] {K_HideWindow} \n");
 		BAutolock _(fWorkspacesLock);// tododo
 
 		while (K_WorkspacesView* view = list.RemoveItemAt(0)) {
-		debug_printf("[Desktop] {K_HideWindow} K_WorkspacesView loop\n");
+		DEBUG(("[Desktop] {K_HideWindow} K_WorkspacesView loop\n"));
 			k_fWorkspacesViews.RemoveItem(view);
 		}
 	}
@@ -2625,11 +2638,11 @@ debug_printf("[Desktop] {K_HideWindow} \n");
 	UnlockAllWindows();
 
 	if (window == k_fWindowUnderMouse){
-	debug_printf("[Desktop] {K_HideWindow} window == k_fWindowUnderMouse\n");
+	DEBUG(("[Desktop] {K_HideWindow} window == k_fWindowUnderMouse\n"));
 		K__SendFakeMouseMoved();
 	}
 
-debug_printf("[Desktop] {K_HideWindow} end\n");
+DEBUG(("[Desktop] {K_HideWindow} end\n"));
 }
 //end
 
@@ -2658,7 +2671,7 @@ Desktop::MinimizeWindow(Window* window, bool minimize)
 void
 Desktop::K_MinimizeWindow(K_Window* window, bool minimize)
 {
-debug_printf("[Desktop]{K_MinimizedWindow}\n");
+DEBUG(("[Desktop]{K_MinimizedWindow}\n"));
 
 	if (!LockAllWindows())
 		return;
@@ -2675,7 +2688,7 @@ debug_printf("[Desktop]{K_MinimizedWindow}\n");
 
 	UnlockAllWindows();
 
-debug_printf("[Desktop]{K_MinimizedWindow} end\n");
+DEBUG(("[Desktop]{K_MinimizedWindow} end\n"));
 }
 //end
 
@@ -2778,7 +2791,7 @@ Desktop::MoveWindowBy(Window* window, float x, float y, int32 workspace)
 void
 Desktop::K_MoveWindowBy(K_Window* window, float x, float y, int32 workspace)
 {
-debug_printf("[Desktop]{K_MoveWindowBy}\n");
+DEBUG(("[Desktop]{K_MoveWindowBy}\n"));
 
 	if (x == 0 && y == 0)
 		return;
@@ -2795,7 +2808,7 @@ debug_printf("[Desktop]{K_MoveWindowBy}\n");
 		if (workspace != fCurrentWorkspace) {
 			K_WindowStack* stack = window->GetWindowStack();
 			if (stack != NULL) {
-			debug_printf("[Desktop]{K_MoveWindowBy}\n");
+			DEBUG(("[Desktop]{K_MoveWindowBy}\n"));
 				for (int32 s = 0; s < stack->CountWindows(); s++) {
 					K_Window* stackWindow = stack->WindowAt(s);
 					// move the window on another workspace - this doesn't
@@ -2870,7 +2883,7 @@ debug_printf("[Desktop]{K_MoveWindowBy}\n");
 
 	K_NotifyWindowMoved(window);
 
-debug_printf("[Desktop]{K_MoveWindowBy}end\n");
+DEBUG(("[Desktop]{K_MoveWindowBy}end\n"));
 }
 //end
 
@@ -2939,8 +2952,8 @@ Desktop::ResizeWindowBy(Window* window, float x, float y)
 void
 Desktop::K_ResizeWindowBy(K_Window* window, float x, float y)
 {
-debug_printf("[Desktop]{K_ResizeeWindowBy}\n");
-debug_printf("[Desktop]{K_ResizeeWindowBy}x=%f,y=%f\n",x,y);
+DEBUG(("[Desktop]{K_ResizeeWindowBy}\n"));
+DEBUG(("[Desktop]{K_ResizeeWindowBy}x=%f,y=%f\n",x,y));
 
 	if (x == 0 && y == 0)
 		return;
@@ -2997,7 +3010,7 @@ debug_printf("[Desktop]{K_ResizeeWindowBy}x=%f,y=%f\n",x,y);
 
 	K_NotifyWindowResized(window);
 
-debug_printf("[Desktop]{K_ResizeeWindowBy}end\n");
+DEBUG(("[Desktop]{K_ResizeeWindowBy}end\n"));
 }
 //end
 
@@ -3056,7 +3069,7 @@ Desktop::SetWindowDecoratorSettings(Window* window, const BMessage& settings)
 void
 Desktop::K_SetWindowOutlinesDelta(K_Window* window, BPoint delta)
 {
-debug_printf("[Desktop] {K_SetWindowOutlinesDelta} \n");
+DEBUG(("[Desktop] {K_SetWindowOutlinesDelta} \n"));
 	AutoWriteLocker _(fWindowLock);
 
 	if (!window->IsVisible())
@@ -3076,7 +3089,7 @@ debug_printf("[Desktop] {K_SetWindowOutlinesDelta} \n");
 bool
 Desktop::K_SetWindowTabLocation(K_Window* window, float location, bool isShifting)
 {
-debug_printf("[Desktop] {K_SetWindowTabLocation} \n");
+DEBUG(("[Desktop] {K_SetWindowTabLocation} \n"));
 
 	AutoWriteLocker _(fWindowLock);
 
@@ -3094,7 +3107,7 @@ debug_printf("[Desktop] {K_SetWindowTabLocation} \n");
 bool
 Desktop::K_SetWindowDecoratorSettings(K_Window* window, const BMessage& settings)
 {
-debug_printf("[Desktop] {K_SetWindowDecoratorSettings} \n");
+DEBUG(("[Desktop] {K_SetWindowDecoratorSettings} \n"));
 
 	AutoWriteLocker _(fWindowLock);
 
@@ -3135,7 +3148,7 @@ Desktop::SetWindowWorkspaces(Window* window, uint32 workspaces)
 void
 Desktop::K_SetWindowWorkspaces(K_Window* window, uint32 workspaces)
 {
-debug_printf("[Desktop] {K_SetWindowWorkspaces} \n");
+DEBUG(("[Desktop] {K_SetWindowWorkspaces} \n"));
 
 	LockAllWindows();
 
@@ -3154,7 +3167,7 @@ debug_printf("[Desktop] {K_SetWindowWorkspaces} \n");
 	}
 	UnlockAllWindows();
 
-debug_printf("[Desktop] {K_SetWindowWorkspaces} ended\n");
+DEBUG(("[Desktop] {K_SetWindowWorkspaces} ended\n"));
 }
 //end
 
@@ -3196,37 +3209,37 @@ Desktop::AddWindow(Window *window)
 void
 Desktop::K_AddWindow(K_Window *window)
 {
-debug_printf("[Desktop] {K_AddWindow} \n");
+DEBUG(("[Desktop] {K_AddWindow} \n"));
 
 	LockAllWindows();
 
 	k_fAllWindows.AddWindow(window);//here window is added in list
 	if (!window->IsNormal())
 	{
-	debug_printf("[Desktop] {K_AddWindow}!window->IsNormal()\n");
+	DEBUG(("[Desktop] {K_AddWindow}!window->IsNormal()\n"));
 		k_fSubsetWindows.AddWindow(window);
 	}
 
 	if (window->IsNormal()) {
-	debug_printf("[Desktop] {K_AddWindow} window->IsNormal()\n");
+	DEBUG(("[Desktop] {K_AddWindow} window->IsNormal()\n"));
 		if (window->Workspaces() == B_CURRENT_WORKSPACE)
 		{
-		debug_printf("[Desktop] {K_AddWindow} window->Workspaces()==B_CURRENT_WORKSPACE\n");
+		DEBUG(("[Desktop] {K_AddWindow} window->Workspaces()==B_CURRENT_WORKSPACE\n"));
 			window->SetWorkspaces(workspace_to_workspaces(CurrentWorkspace()));
 		}
 	} else {
-		debug_printf("[Desktop] {K_AddWindow} else part of window->IsNormal()\n");
+		DEBUG(("[Desktop] {K_AddWindow} else part of window->IsNormal()\n"));
 		// subset windows are visible on all workspaces their subset is on
 		window->SetWorkspaces(window->SubsetWorkspaces());
 	}
 
-debug_printf("[Desktop] {K_AddWindow} window->Workspaces() = %d\n", window->Workspaces());
+DEBUG(("[Desktop] {K_AddWindow} window->Workspaces() = %d\n", window->Workspaces()));
 	K__ChangeWindowWorkspaces(window, 0, window->Workspaces());
 
 	K_NotifyWindowAdded(window);
 
 	UnlockAllWindows();
-debug_printf("[Desktop] {K_AddWindow}ended\n");
+DEBUG(("[Desktop] {K_AddWindow}ended\n"));
 }
 //end
 
@@ -3259,7 +3272,7 @@ Desktop::RemoveWindow(Window *window)
 void
 Desktop::K_RemoveWindow(K_Window *window)
 {
-debug_printf("[Desktop]{K_RemoveWindow}\n");
+DEBUG(("[Desktop]{K_RemoveWindow}\n"));
 
 	LockAllWindows();
 
@@ -3283,7 +3296,7 @@ debug_printf("[Desktop]{K_RemoveWindow}\n");
 	EventDispatcher().RemoveTarget(window->EventTarget());
 
 
-debug_printf("[Desktop]{K_RemoveWindow} end\n");
+DEBUG(("[Desktop]{K_RemoveWindow} end\n"));
 }
 //khidki end
 
@@ -3348,7 +3361,7 @@ Desktop::FontsChanged(Window* window)
 void
 Desktop::K_FontsChanged(K_Window* window)
 {
-debug_printf("[Desktop]{K_FontsChanged}\n");
+DEBUG(("[Desktop]{K_FontsChanged}\n"));
 	AutoWriteLocker _(fWindowLock);
 
 	BRegion dirty;
@@ -3356,7 +3369,7 @@ debug_printf("[Desktop]{K_FontsChanged}\n");
 
 	K_RebuildAndRedrawAfterWindowChange(window, dirty);
 
-debug_printf("[Desktop]{K_FontsChanged}end\n");
+DEBUG(("[Desktop]{K_FontsChanged}end\n"));
 }
 //end
 
@@ -3390,7 +3403,7 @@ Desktop::ColorUpdated(Window* window, color_which which, rgb_color color)
 void
 Desktop::K_ColorUpdated(K_Window* window, color_which which, rgb_color color)
 {
-debug_printf("[Desktop]{K_ColorUpdated}\n");
+DEBUG(("[Desktop]{K_ColorUpdated}\n"));
 
 	AutoWriteLocker _(fWindowLock);
 
@@ -3412,7 +3425,7 @@ debug_printf("[Desktop]{K_ColorUpdated}\n");
 	window->ColorsChanged(&dirty);
 	K_RebuildAndRedrawAfterWindowChange(window, dirty);
 
-debug_printf("[Desktop]{K_ColorUpdated}end\n");
+DEBUG(("[Desktop]{K_ColorUpdated}end\n"));
 }
 //end
 
@@ -3440,7 +3453,7 @@ Desktop::SetWindowLook(Window* window, window_look newLook)
 void
 Desktop::K_SetWindowLook(K_Window* window, window_look newLook)
 {
-debug_printf("[Desktop]{K_SetWindowLook}\n");
+DEBUG(("[Desktop]{K_SetWindowLook}\n"));
 	if (window->Look() == newLook)
 		return;
 
@@ -3455,7 +3468,7 @@ debug_printf("[Desktop]{K_SetWindowLook}\n");
 
 	K_NotifyWindowLookChanged(window, newLook);
 
-debug_printf("[Desktop]{K_SetWindowLook}end\n");
+DEBUG(("[Desktop]{K_SetWindowLook}end\n"));
 }
 //end
 
@@ -3567,7 +3580,7 @@ Desktop::SetWindowFeel(Window* window, window_feel newFeel)
 void
 Desktop::K_SetWindowFeel(K_Window* window, window_feel newFeel)
 {
-debug_printf("[Desktop]{K_SetWindowFeel}\n");
+DEBUG(("[Desktop]{K_SetWindowFeel}\n"));
 
 	if (window->Feel() == newFeel)
 		return;
@@ -3667,7 +3680,7 @@ debug_printf("[Desktop]{K_SetWindowFeel}\n");
 
 	UnlockAllWindows();
 
-debug_printf("[Desktop]{K_SetWindowFeel} end\n");
+DEBUG(("[Desktop]{K_SetWindowFeel} end\n"));
 }
 //end
 
@@ -3693,7 +3706,7 @@ Desktop::SetWindowFlags(Window *window, uint32 newFlags)
 void
 Desktop::K_SetWindowFlags(K_Window *window, uint32 newFlags)
 {
-debug_printf("[Desktop]{K_SetWindowFlags}\n");
+DEBUG(("[Desktop]{K_SetWindowFlags}\n"));
 	if (window->Flags() == newFlags)
 		return;
 
@@ -3706,7 +3719,7 @@ debug_printf("[Desktop]{K_SetWindowFlags}\n");
 
 	K_RebuildAndRedrawAfterWindowChange(window, dirty);
 
-debug_printf("[Desktop]{K_SetWindowFlags}ends\n");
+DEBUG(("[Desktop]{K_SetWindowFlags}ends\n"));
 }
 //end
 
@@ -3727,7 +3740,7 @@ Desktop::SetWindowTitle(Window *window, const char* title)
 void
 Desktop::K_SetWindowTitle(K_Window *window, const char* title)
 {
-debug_printf("[Desktop]{K_SetWindowTitle}\n");
+DEBUG(("[Desktop]{K_SetWindowTitle}\n"));
 	AutoWriteLocker _(fWindowLock);
 
 	BRegion dirty;
@@ -3735,7 +3748,7 @@ debug_printf("[Desktop]{K_SetWindowTitle}\n");
 
 	K_RebuildAndRedrawAfterWindowChange(window, dirty);
 
-debug_printf("[Desktop]{K_SetWindowTitle}ends\n");
+DEBUG(("[Desktop]{K_SetWindowTitle}ends\n"));
 }
 //end
 
@@ -3763,7 +3776,7 @@ Desktop::WindowAt(BPoint where)
 K_Window*
 Desktop::K_WindowAt(BPoint where)
 {
-debug_printf("[Desktop]{K_WindowAt}\n");
+DEBUG(("[Desktop]{K_WindowAt}\n"));
 
 	for (K_Window* window = K_CurrentWindows().LastWindow(); window;
 			window = window->PreviousWindow(fCurrentWorkspace)) {
@@ -3771,7 +3784,7 @@ debug_printf("[Desktop]{K_WindowAt}\n");
 			return window->StackedWindowAt(where);
 	}
 
-debug_printf("[Desktop]{K_WindowAt} about to return NULL\n");
+DEBUG(("[Desktop]{K_WindowAt} about to return NULL\n"));
 	return NULL;
 }
 //end
@@ -3805,14 +3818,14 @@ Desktop::SetViewUnderMouse(const Window* window, int32 viewToken)
 void
 Desktop::K_SetViewUnderMouse(const K_Window* window, int32 viewToken)
 {
-debug_printf("[Desktop]{K_SetViewUnderMouse}\n");
+DEBUG(("[Desktop]{K_SetViewUnderMouse}\n"));
 
 	fWindowUnderMouse = NULL;//custom code
 
 	k_fWindowUnderMouse = window;
 	fViewUnderMouse = viewToken;
 
-debug_printf("[Desktop]{K_SetViewUnderMouse}ends\n");
+DEBUG(("[Desktop]{K_SetViewUnderMouse}ends\n"));
 }
 //end
 
@@ -3831,12 +3844,12 @@ Desktop::ViewUnderMouse(const Window* window)
 int32
 Desktop::K_ViewUnderMouse(const K_Window* window)
 {
-debug_printf("[Desktop]{K_ViewUnderMouse}\n");
+DEBUG(("[Desktop]{K_ViewUnderMouse}\n"));
 
 	if (window != NULL && k_fWindowUnderMouse == window)
 		return fViewUnderMouse;
 
-debug_printf("[Desktop]{K_ViewUnderMouse}about to return null token\n");
+DEBUG(("[Desktop]{K_ViewUnderMouse}about to return null token\n"));
 	return B_NULL_TOKEN;
 }
 //end
@@ -3875,7 +3888,7 @@ Desktop::KeyboardEventTarget()
 EventTarget*
 Desktop::K_KeyboardEventTarget()
 {
-debug_printf("[Desktop]{K_KeyboardEventTarget}\n");
+DEBUG(("[Desktop]{K_KeyboardEventTarget}\n"));
 
 	// Get the top most non-hidden window
 	K_Window* window = K_CurrentWindows().LastWindow();
@@ -3977,12 +3990,12 @@ Desktop::SetFocusWindow(Window* nextFocus)
 	
 //custom mak start
 if (k_fFocus != NULL) {
-		debug_printf("[Desktop] {SetFocusWindow} k_fFocus != NULL 1\n");
+		DEBUG(("[Desktop] {SetFocusWindow} k_fFocus != NULL 1\n"));
 		k_fFocus->SetFocus(false);
 		oldActiveApp = k_fFocus->KServerWindow()->App()->ClientTeam();
 
 
-	debug_printf("[Desktop] {SetFocusWindow} k_fFocus != NULL 1 end\n");
+	DEBUG(("[Desktop] {SetFocusWindow} k_fFocus != NULL 1 end\n"));
 	}
 //end
 
@@ -4040,7 +4053,7 @@ if (k_fFocus != NULL) {
 void
 Desktop::K_SetFocusWindow(K_Window* nextFocus)
 {
-debug_printf("[Desktop] {K_SetFocusWindow} \n");
+DEBUG(("[Desktop] {K_SetFocusWindow} \n"));
 k_fFocus=NULL;
 	if (!LockAllWindows())
 		return;
@@ -4055,18 +4068,18 @@ k_fFocus=NULL;
 	bool hasWindowScreen = false;
 
 	if (!hasModal && nextFocus != NULL) {
-	debug_printf("[Desktop] {K_SetFocusWindow} !hasModal && nextFocus != NULL\n");
+	DEBUG(("[Desktop] {K_SetFocusWindow} !hasModal && nextFocus != NULL\n"));
 		// Check whether or not a window screen is in front of the window
 		// (if it has a modal, the right thing is done, anyway)
 		K_Window* window = nextFocus;
 		while (true) {
-		debug_printf("[Desktop] {K_SetFocusWindow} while(true)\n");
+		DEBUG(("[Desktop] {K_SetFocusWindow} while(true)\n"));
 			window = window->NextWindow(fCurrentWorkspace);
 			if (window == NULL || window->Feel() == kWindowScreenFeel)
 				break;
 		}
 		if (window != NULL){
-		debug_printf("[Desktop] {K_SetFocusWindow} window != null\n");
+		DEBUG(("[Desktop] {K_SetFocusWindow} window != null\n"));
 			hasWindowScreen = true;
 		}
 	}
@@ -4074,7 +4087,7 @@ k_fFocus=NULL;
 	if (nextFocus == k_fFocus && nextFocus != NULL && !nextFocus->IsHidden()
 		&& (nextFocus->Flags() & B_AVOID_FOCUS) == 0
 		&& !hasModal && !hasWindowScreen) {
-		debug_printf("[Desktop] {K_SetFocusWindow} before UnlockAllWindows()\n");
+		DEBUG(("[Desktop] {K_SetFocusWindow} before UnlockAllWindows()\n"));
 		// the window that is supposed to get focus already has focus
 		UnlockAllWindows();
 		return;
@@ -4083,18 +4096,18 @@ k_fFocus=NULL;
 	uint32 listIndex = fCurrentWorkspace;
 	K_WindowList* list = &K__Windows(fCurrentWorkspace);
 	if (!fSettings->NormalMouse()) {
-		debug_printf("[Desktop] {K_SetFocusWindow} !fSettings->NormalMouse()\n");
+		DEBUG(("[Desktop] {K_SetFocusWindow} !fSettings->NormalMouse()\n"));
 		listIndex = k_kFocusList;
 		list = &k_fFocusList;
 	}
 
 	if (nextFocus == NULL || hasModal || hasWindowScreen) {
-	debug_printf("[Desktop] {K_SetFocusWindow} nextFocus == NULL || hasModal || hasWindowScreen \n");
+	DEBUG(("[Desktop] {K_SetFocusWindow} nextFocus == NULL || hasModal || hasWindowScreen \n"));
 
 		nextFocus = list->LastWindow();
 
 		if (fSettings->NormalMouse()) {
-			debug_printf("[Desktop] {K_SetFocusWindow} fSettings->NormalMouse() \n");
+			DEBUG(("[Desktop] {K_SetFocusWindow} fSettings->NormalMouse() \n"));
 			// If the last window having focus is a window that cannot make it
 			// to the front, we use that as the next focus
 			K_Window* lastFocus = k_fFocusList.LastWindow();
@@ -4107,12 +4120,12 @@ k_fFocus=NULL;
 
 	// make sure no window is chosen that doesn't want focus or cannot have it
 	while (nextFocus != NULL && !K__WindowCanHaveFocus(nextFocus)) {
-	debug_printf("[Desktop] {K_SetFocusWindow} nextFocus != NULL && !K__WindowCanHaveFocus(nextFocus) \n");
+	DEBUG(("[Desktop] {K_SetFocusWindow} nextFocus != NULL && !K__WindowCanHaveFocus(nextFocus) \n"));
 		nextFocus = nextFocus->PreviousWindow(listIndex);
 	}
 
 	if (k_fFocus == nextFocus) {
-		debug_printf("[Desktop] {K_SetFocusWindow} k_fFocus == nextFocus\n");
+		DEBUG(("[Desktop] {K_SetFocusWindow} k_fFocus == nextFocus\n"));
 		// turns out the window that is supposed to get focus now already has it
 		UnlockAllWindows();
 		return;
@@ -4122,27 +4135,27 @@ k_fFocus=NULL;
 	team_id newActiveApp = -1;
 
 	if (k_fFocus != NULL) {
-		debug_printf("[Desktop] {K_SetFocusWindow} k_fFocus != NULL 1\n");
+		DEBUG(("[Desktop] {K_SetFocusWindow} k_fFocus != NULL 1\n"));
 		k_fFocus->SetFocus(false);
 		oldActiveApp = k_fFocus->KServerWindow()->App()->ClientTeam();
 
 
-	debug_printf("[Desktop] {K_SetFocusWindow} k_fFocus != NULL 1 end\n");
+	DEBUG(("[Desktop] {K_SetFocusWindow} k_fFocus != NULL 1 end\n"));
 	}
 //custom mak start
 if (fFocus != NULL) {
-		debug_printf("[Desktop] {K_SetFocusWindow} fFocus != NULL 1\n");
+		DEBUG(("[Desktop] {K_SetFocusWindow} fFocus != NULL 1\n"));
 		fFocus->SetFocus(false);
 		oldActiveApp = fFocus->ServerWindow()->App()->ClientTeam();
 
 fFocus = NULL;
-	debug_printf("[Desktop] {K_SetFocusWindow} fFocus != NULL 1 end\n");
+	DEBUG(("[Desktop] {K_SetFocusWindow} fFocus != NULL 1 end\n"));
 	}
 //end
 	k_fFocus = nextFocus;
 
 	if (k_fFocus != NULL) {
-	debug_printf("[Desktop] {K_SetFocusWindow} k_fFocus != NULL 2\n");
+	DEBUG(("[Desktop] {K_SetFocusWindow} k_fFocus != NULL 2\n"));
 		k_fFocus->SetFocus(true);
 		newActiveApp = k_fFocus->KServerWindow()->App()->ClientTeam();
 
@@ -4150,7 +4163,7 @@ fFocus = NULL;
 		k_fFocusList.RemoveWindow(k_fFocus);
 		k_fFocusList.AddWindow(k_fFocus);
 
-	debug_printf("[Desktop] {K_SetFocusWindow} k_fFocus != NULL 2 end\n");
+	DEBUG(("[Desktop] {K_SetFocusWindow} k_fFocus != NULL 2 end\n"));
 	}
 
 	if (newActiveApp == -1) {
@@ -4167,7 +4180,7 @@ fFocus = NULL;
 	BAutolock locker(fApplicationsLock);
 
 	for (int32 i = 0; i < fApplications.CountItems(); i++) {
-	debug_printf("[Desktop] {K_SetFocusWindow} loop\n");
+	DEBUG(("[Desktop] {K_SetFocusWindow} loop\n"));
 		ServerApp* app = fApplications.ItemAt(i);
 
 		if (oldActiveApp != -1 && app->ClientTeam() == oldActiveApp)
@@ -4176,7 +4189,7 @@ fFocus = NULL;
 			app->Activate(true);
 	}
 
-debug_printf("[Desktop] {K_SetFocusWindow} end\n");
+DEBUG(("[Desktop] {K_SetFocusWindow} end\n"));
 }
 //end
 
@@ -4202,12 +4215,12 @@ Desktop::SetFocusLocked(const Window* window)
 void
 Desktop::K_SetFocusLocked(const K_Window* window)
 {
-debug_printf("[Desktop] {K_SetFocusLocked}\n");
+DEBUG(("[Desktop] {K_SetFocusLocked}\n"));
 
 	AutoWriteLocker _(fWindowLock);
 
 	if (window != NULL) {
-	debug_printf("[Desktop] {K_SetFocusLocked}window != NULL\n");
+	DEBUG(("[Desktop] {K_SetFocusLocked}window != NULL\n"));
 		// Don't allow this to be set when no mouse buttons
 		// are pressed. (BView::SetMouseEventMask() should only be called
 		// from mouse hooks.)
@@ -4217,7 +4230,7 @@ debug_printf("[Desktop] {K_SetFocusLocked}\n");
 
 	k_fLockedFocusWindow = window;
 
-debug_printf("[Desktop] {K_SetFocusLocked}end\n");
+DEBUG(("[Desktop] {K_SetFocusLocked}end\n"));
 }
 //end
 
@@ -4241,7 +4254,7 @@ Desktop::FindWindowByClientToken(int32 token, team_id teamID)
 K_Window*
 Desktop::K_FindWindowByClientToken(int32 token, team_id teamID)
 {
-debug_printf("[Desktop]{K_FindWindowByClientToken}\n");
+DEBUG(("[Desktop]{K_FindWindowByClientToken}\n"));
 
 	for (K_Window *window = k_fAllWindows.FirstWindow(); window != NULL;
 			window = window->NextWindow(k_kAllWindowList)) {
@@ -4296,14 +4309,14 @@ Desktop::MarkDirty(BRegion& region)
 void
 Desktop::K_MarkDirty(BRegion& region)
 {
-debug_printf("[Desktop]{K_MarkDirty}\n");
+DEBUG(("[Desktop]{K_MarkDirty}\n"));
 	if (region.CountRects() == 0)
-	{debug_printf("[Desktop]{K_MarkDirty} CountRects()=%d\n",region.CountRects());
+	{DEBUG(("[Desktop]{K_MarkDirty} CountRects()=%d\n",region.CountRects()));
 		return;
 	}
 
 	if (LockAllWindows()) {
-	debug_printf("[Desktop]{K_MarkDirty} means region has rects\n");
+	DEBUG(("[Desktop]{K_MarkDirty} means region has rects\n"));
 		// send redraw messages to all windows intersecting the dirty region
 		K__TriggerWindowRedrawing(region);
 		//_TriggerWindowRedrawing(region);//mak custom
@@ -4311,7 +4324,7 @@ debug_printf("[Desktop]{K_MarkDirty}\n");
 		UnlockAllWindows();
 	}
 
-debug_printf("[Desktop]{K_MarkDirty}ends\n");
+DEBUG(("[Desktop]{K_MarkDirty}ends\n"));
 }
 //end
 
@@ -4328,12 +4341,12 @@ Desktop::Redraw()
 void
 Desktop::K_Redraw()
 {
-debug_printf("[Desktop]{K_Redraw}\n");
+DEBUG(("[Desktop]{K_Redraw}\n"));
 
 	BRegion dirty(fVirtualScreen.Frame());
 	K_MarkDirty(dirty);
 
-debug_printf("[Desktop]{K_Redraw}ends\n");
+DEBUG(("[Desktop]{K_Redraw}ends\n"));
 }
 //end
 
@@ -4385,7 +4398,7 @@ Desktop::RedrawBackground()
 void
 Desktop::K_RedrawBackground()
 {
-debug_printf("[Desktop] {K_RedrawBackground} \n");
+DEBUG(("[Desktop] {K_RedrawBackground} \n"));
 
 	LockAllWindows();
 
@@ -4470,7 +4483,7 @@ Desktop::ReloadDecor(DecorAddOn* oldDecor)
 bool
 Desktop::K_ReloadDecor(K_DecorAddOn* oldDecor)
 {
-debug_printf("[Desktop]{K_ReloadDecor}\n");
+DEBUG(("[Desktop]{K_ReloadDecor}\n"));
 
 	AutoWriteLocker _(fWindowLock);
 
@@ -4532,7 +4545,7 @@ Desktop::MinimizeApplication(team_id team)
 void
 Desktop::K_MinimizeApplication(team_id team)
 {
-debug_printf("[Desktop]{K_MinimizeApplication}\n");
+DEBUG(("[Desktop]{K_MinimizeApplication}\n"));
 
 	AutoWriteLocker locker(fWindowLock);
 
@@ -4546,7 +4559,7 @@ debug_printf("[Desktop]{K_MinimizeApplication}\n");
 		window->KServerWindow()->NotifyMinimize(true);
 	}
 
-debug_printf("[Desktop]{K_MinimizeApplication}end\n");
+DEBUG(("[Desktop]{K_MinimizeApplication}end\n"));
 }
 //end
 
@@ -4573,7 +4586,7 @@ Desktop::BringApplicationToFront(team_id team)
 void
 Desktop::K_BringApplicationToFront(team_id team)
 {
-debug_printf("[Desktop]{K_BringApplicationToFront}\n");
+DEBUG(("[Desktop]{K_BringApplicationToFront}\n"));
 
 	AutoWriteLocker locker(fWindowLock);
 
@@ -4588,7 +4601,7 @@ debug_printf("[Desktop]{K_BringApplicationToFront}\n");
 		window->KServerWindow()->NotifyMinimize(false);
 	}
 
-debug_printf("[Desktop]{K_BringApplicationToFront}end\n");
+DEBUG(("[Desktop]{K_BringApplicationToFront}end\n"));
 }
 //end
 
@@ -4626,7 +4639,7 @@ Desktop::WindowAction(int32 windowToken, int32 action)
 void
 Desktop::K_WindowAction(int32 windowToken, int32 action)
 {
-debug_printf("[Desktop]{K_WindowAction}\n");
+DEBUG(("[Desktop]{K_WindowAction}\n"));
 
 	if (action != B_MINIMIZE_WINDOW && action != B_BRING_TO_FRONT)
 		return;
@@ -4652,7 +4665,7 @@ debug_printf("[Desktop]{K_WindowAction}\n");
 
 	UnlockAllWindows();
 
-debug_printf("[Desktop]{K_WindowAction}end\n");
+DEBUG(("[Desktop]{K_WindowAction}end\n"));
 }
 //end
 
@@ -4704,7 +4717,7 @@ Desktop::WriteWindowList(team_id team, BPrivate::LinkSender& sender)
 void
 Desktop::K_WriteWindowList(team_id team, BPrivate::LinkSender& sender)
 {
-debug_printf("[Desktop]{K_WriteWindowList}\n");
+DEBUG(("[Desktop]{K_WriteWindowList}\n"));
 
 	AutoWriteLocker locker(fWindowLock);
 
@@ -4744,7 +4757,7 @@ debug_printf("[Desktop]{K_WriteWindowList}\n");
 
 	sender.Flush();
 
-debug_printf("[Desktop]{K_WriteWindowList}end\n");
+DEBUG(("[Desktop]{K_WriteWindowList}end\n"));
 }
 //end
 
@@ -4800,7 +4813,7 @@ Desktop::WriteWindowInfo(int32 serverToken, BPrivate::LinkSender& sender)
 void
 Desktop::K_WriteWindowInfo(int32 serverToken, BPrivate::LinkSender& sender)
 {
-debug_printf("[Desktop]{K_WriteWindowInfo} TODO\n");
+DEBUG(("[Desktop]{K_WriteWindowInfo} TODO\n"));
 
 	AutoWriteLocker locker(fWindowLock);
 	BAutolock tokenLocker(BPrivate::gDefaultTokens);
@@ -4883,7 +4896,7 @@ Desktop::WriteWindowOrder(int32 workspace, BPrivate::LinkSender& sender)
 void
 Desktop::K_WriteWindowOrder(int32 workspace, BPrivate::LinkSender& sender)
 {
-debug_printf("[Desktop]{K_WriteWindowOrder} TODO\n");
+DEBUG(("[Desktop]{K_WriteWindowOrder} TODO\n"));
 	LockSingleWindow();
 
 	if (workspace < 0)
@@ -4986,7 +4999,7 @@ Desktop::WriteApplicationOrder(int32 workspace, BPrivate::LinkSender& sender)
 void
 Desktop::K_WriteApplicationOrder(int32 workspace, BPrivate::LinkSender& sender)
 {
-debug_printf("[Desktop]{K_WriteApplicationOrder} TODO\n");
+DEBUG(("[Desktop]{K_WriteApplicationOrder} TODO\n"));
 
 	fApplicationsLock.Lock();
 	LockSingleWindow();
@@ -5462,7 +5475,7 @@ K_WindowList&
 Desktop::K_CurrentWindows()
 {
 #ifdef DEBUG_DESKTOP_K_Window
-debug_printf("[Desktop]{K_CurrentWindows}\n");
+DEBUG(("[Desktop]{K_CurrentWindows}\n"));
 #endif
 	return fWorkspaces[fCurrentWorkspace].K_Windows();
 }
@@ -5503,7 +5516,7 @@ Desktop::WindowForClientLooperPort(port_id port)
 K_Window*
 Desktop::K_WindowForClientLooperPort(port_id port)
 {
-debug_printf("[Desktop]{K_WindowForClientLooperPort} TODO\n");
+DEBUG(("[Desktop]{K_WindowForClientLooperPort} TODO\n"));
 
 	ASSERT_MULTI_LOCKED(fWindowLock);
 
@@ -5530,7 +5543,7 @@ K_WindowList&
 Desktop::K__Windows(int32 index)
 {
 #ifdef DEBUG_DESKTOP_K_Window
-debug_printf("[Desktop]{K__Windows}\n");
+DEBUG(("[Desktop]{K__Windows}\n"));
 #endif
 	ASSERT(index >= 0 && index < kMaxWorkspaces);
 	return fWorkspaces[index].K_Windows();
@@ -5590,7 +5603,7 @@ Desktop::_FlushPendingColors()
 void
 Desktop::K__FlushPendingColors()
 {
-debug_printf("[Desktop]{K__FlushPendingColors} TODO\n");
+DEBUG(("[Desktop]{K__FlushPendingColors} TODO\n"));
 
 	// Update all windows while we are holding the write lock.
 
@@ -5645,7 +5658,7 @@ Desktop::_UpdateFloating(int32 previousWorkspace, int32 nextWorkspace,
 //khidki start
 if(mouseEventWindow==NULL)
 {
-	debug_printf("[Desktop]{_UpdateFloating}mouseEvent=NULL\n");
+	DEBUG(("[Desktop]{_UpdateFloating}mouseEvent=NULL\n"));
 }
 //end
 	if (previousWorkspace == -1)
@@ -5710,7 +5723,7 @@ int i=0;//mak
 	for (Window* window = CurrentWindows().FirstWindow(); window != NULL;
 			window = window->NextWindow(fCurrentWorkspace)) {
 		i++;
-		debug_printf("[Desktop]{_UpdateBack}i=%d\n",i);
+		DEBUG(("[Desktop]{_UpdateBack}i=%d\n",i));
 		if (window->IsHidden() || window->Feel() == kDesktopWindowFeel)
 			continue;
 
@@ -5764,13 +5777,13 @@ void
 Desktop::K__UpdateFloating(int32 previousWorkspace, int32 nextWorkspace,
 	K_Window* mouseEventWindow)
 {
-debug_printf("[Desktop]{K__UpdateFloating}\n");
-debug_printf("[Desktop]{K__UpdateFloating}previousWorkspace=%d\n",previousWorkspace);
-debug_printf("[Desktop]{K__UpdateFloating}nextWorkspace=%d\n",nextWorkspace);
+DEBUG(("[Desktop]{K__UpdateFloating}\n"));
+DEBUG(("[Desktop]{K__UpdateFloating}previousWorkspace=%d\n",previousWorkspace));
+DEBUG(("[Desktop]{K__UpdateFloating}nextWorkspace=%d\n",nextWorkspace));
 //khidki start
 if(mouseEventWindow==NULL)
 {
-	debug_printf("[Desktop]{K__UpdateFloating}mouseEvent=NULL\n");
+	DEBUG(("[Desktop]{K__UpdateFloating}mouseEvent=NULL\n"));
 }
 //end
 
@@ -5781,7 +5794,7 @@ if(mouseEventWindow==NULL)
 
 	for (K_Window* floating = k_fSubsetWindows.FirstWindow(); floating != NULL;
 			floating = floating->NextWindow(k_kSubsetList)) {
-			debug_printf("[Desktop]{K__UpdateFloating}inside for loop\n");
+			DEBUG(("[Desktop]{K__UpdateFloating}inside for loop\n"));
 		// we only care about app/subset floating windows
 		if (floating->Feel() != B_FLOATING_SUBSET_WINDOW_FEEL
 			&& floating->Feel() != B_FLOATING_APP_WINDOW_FEEL)
@@ -5823,7 +5836,7 @@ if(mouseEventWindow==NULL)
 		}
 	}
 
-debug_printf("[Desktop]{K__UpdateFloating}ends\n");
+DEBUG(("[Desktop]{K__UpdateFloating}ends\n"));
 }
 
 
@@ -5834,7 +5847,7 @@ debug_printf("[Desktop]{K__UpdateFloating}ends\n");
 void
 Desktop::K__UpdateBack()
 {
-debug_printf("[Desktop]{K__UpdateBack}\n");
+DEBUG(("[Desktop]{K__UpdateBack}\n"));
 
 	k_fBack = NULL;
 	fBack = NULL; //mak custom {this will let the BWindow to loose focus when we click  on KWindow.}
@@ -5843,10 +5856,10 @@ int i=0;
 	for (K_Window* window = K_CurrentWindows().FirstWindow(); window != NULL;
 			window = window->NextWindow(fCurrentWorkspace)) {
 		i++;
-		debug_printf("[Desktop]{K__UpdateBack}i=%d\n",i);
+		DEBUG(("[Desktop]{K__UpdateBack}i=%d\n",i));
 		if (window->IsHidden() || window->Feel() == kDesktopWindowFeel)
 		{
-		debug_printf("[Desktop]{K__UpdateBack}jaatbar cant be k_fBack\n");
+		DEBUG(("[Desktop]{K__UpdateBack}jaatbar cant be k_fBack\n"));
 			continue;
 		}
 
@@ -5854,7 +5867,7 @@ int i=0;
 		break;
 	}
 
-debug_printf("[Desktop]{K__UpdateBack}end\n");
+DEBUG(("[Desktop]{K__UpdateBack}end\n"));
 }
 
 
@@ -5869,7 +5882,7 @@ debug_printf("[Desktop]{K__UpdateBack}end\n");
 void
 Desktop::K__UpdateFront(bool updateFloating)
 {
-debug_printf("[Desktop]{K__UpdateFront}\n");
+DEBUG(("[Desktop]{K__UpdateFront}\n"));
 
 	k_fFront = NULL;
 	fFront = NULL; //mak custom [make the front BWindow to NULL]
@@ -5878,11 +5891,11 @@ int i = 0;
 	for (K_Window* window = K_CurrentWindows().LastWindow(); window != NULL;
 			window = window->PreviousWindow(fCurrentWorkspace)) {
 		i++;
-		debug_printf("[Desktop]{K__UpdateFront}i=%d\n",i);
+		DEBUG(("[Desktop]{K__UpdateFront}i=%d\n",i));
 		if (window->IsHidden() || window->IsFloating()
 			|| !window->SupportsFront())
 		{
-		debug_printf("[Desktop]{K__UpdateFront}continue to previous window\n");
+		DEBUG(("[Desktop]{K__UpdateFront}continue to previous window\n"));
 			continue;
 		}
 
@@ -5893,19 +5906,19 @@ int i = 0;
 	if (updateFloating)
 		K__UpdateFloating();
 
-debug_printf("[Desktop]{K__UpdateFront}end\n");
+DEBUG(("[Desktop]{K__UpdateFront}end\n"));
 }
 
 
 void
 Desktop::K__UpdateFronts(bool updateFloating)
 {
-debug_printf("[Desktop]{K__UpdateFronts}\n");
+DEBUG(("[Desktop]{K__UpdateFronts}\n"));
 
 	K__UpdateBack();
 	K__UpdateFront(updateFloating);
 
-debug_printf("[Desktop]{K__UpdateFronts}end\n");
+DEBUG(("[Desktop]{K__UpdateFronts}end\n"));
 }
 //end
 
@@ -5946,7 +5959,7 @@ Desktop::_WindowCanHaveFocus(Window* window) const
 bool
 Desktop::K__WindowHasModal(K_Window* window) const
 {
-debug_printf("[Desktop]{K__WindowHasModal} TODO\n");
+DEBUG(("[Desktop]{K__WindowHasModal} TODO\n"));
 
 	if (window == NULL)
 		return false;
@@ -5995,11 +6008,11 @@ Desktop::_WindowChanged(Window* window)
 	}
 
 //khidki start
-debug_printf("[Desktop] {K__WindowChanged}k_fWorkspacesViews.CountItems()=%d\n",k_fWorkspacesViews.CountItems());//it is 0
+DEBUG(("[Desktop] {K__WindowChanged}k_fWorkspacesViews.CountItems()=%d\n",k_fWorkspacesViews.CountItems()));//it is 0
 //end
 //since k_fWorkspacesViews.CountItems() =0 so the loop is not executed...
 	for (uint32 i = k_fWorkspacesViews.CountItems(); i-- > 0;) {
-		debug_printf("i=%d",i);
+		DEBUG(("i=%d",i));
 	//	K_WorkspacesView* view = k_fWorkspacesViews.ItemAt(i);
 	//	view->WindowChanged(window);
 	//todo later
@@ -6013,34 +6026,34 @@ debug_printf("[Desktop] {K__WindowChanged}k_fWorkspacesViews.CountItems()=%d\n",
 void
 Desktop::K__WindowChanged(K_Window* window)
 {
-debug_printf("[Desktop] {K__WindowChanged}\n");
+DEBUG(("[Desktop] {K__WindowChanged}\n"));
 
 	ASSERT_MULTI_LOCKED(fWindowLock);
 
 	BAutolock _(fWorkspacesLock);
 
 //khidki start
-debug_printf("[Desktop] {K__WindowChanged}k_fWorkspacesViews.CountItems()=%d\n",k_fWorkspacesViews.CountItems());//it is 0
+DEBUG(("[Desktop] {K__WindowChanged}k_fWorkspacesViews.CountItems()=%d\n",k_fWorkspacesViews.CountItems()));//it is 0
 //end
 //since k_fWorkspacesViews.CountItems() =0 so the loop is not executed...
 	for (uint32 i = k_fWorkspacesViews.CountItems(); i-- > 0;) {
-		debug_printf("i=%d",i);
+		DEBUG(("i=%d",i));
 		K_WorkspacesView* view = k_fWorkspacesViews.ItemAt(i);
 		view->WindowChanged(window);
 	}
 //khidki start
-debug_printf("[Desktop] {K__WindowChanged}fWorkspacesViews.CountItems()=%d\n",fWorkspacesViews.CountItems());
+DEBUG(("[Desktop] {K__WindowChanged}fWorkspacesViews.CountItems()=%d\n",fWorkspacesViews.CountItems()));
 //it is also 0
 //so loop is not executed...
 	for (uint32 i = fWorkspacesViews.CountItems(); i-- > 0;) {
-		debug_printf("i=%d",i);
+		DEBUG(("i=%d",i));
 		//WorkspacesView* view = fWorkspacesViews.ItemAt(i);
 		//view->WindowChanged(window);
 	}
 
 //end
 
-debug_printf("[Desktop] {K__WindowChanged}ends\n");
+DEBUG(("[Desktop] {K__WindowChanged}ends\n"));
 }
 //end
 
@@ -6067,22 +6080,22 @@ Desktop::_WindowRemoved(Window* window)
 void
 Desktop::K__WindowRemoved(K_Window* window)
 {
-debug_printf("[Desktop]{K__WindowRemoved} TODO\n");
+DEBUG(("[Desktop]{K__WindowRemoved} TODO\n"));
 
 	ASSERT_MULTI_LOCKED(fWindowLock);
 
 	BAutolock _(fWorkspacesLock);
 
-//debug_printf("[Desktop]{K__WindowRemoved} fWorkspacesViews.CountItems()=%d, k_fWorkspacesViews.CountItems()\n");
+//DEBUG(("[Desktop]{K__WindowRemoved} fWorkspacesViews.CountItems()=%d, k_fWorkspacesViews.CountItems()\n"));
 
 
 	for (uint32 i = k_fWorkspacesViews.CountItems(); i-- > 0;) {
-		debug_printf("[Desktop]{K__WindowRemoved} inside loop\n");
+		DEBUG(("[Desktop]{K__WindowRemoved} inside loop\n"));
 		K_WorkspacesView* view = k_fWorkspacesViews.ItemAt(i);
 		view->WindowRemoved(window);
 	}//totodo
 
-debug_printf("[Desktop]{K_WindowRemoved}end\n");
+DEBUG(("[Desktop]{K_WindowRemoved}end\n"));
 }
 //end
 
@@ -6123,7 +6136,7 @@ Desktop::_ShowWindow(Window* window, bool affectsOtherWindows)
 void
 Desktop::K__ShowWindow(K_Window* window, bool affectsOtherWindows)
 {
-debug_printf("[Desktop] {K__ShowWindow} \n");
+DEBUG(("[Desktop] {K__ShowWindow} \n"));
 
 	BRegion background;//just a empty region
 	K__RebuildClippingForAllWindows(background);//background has the 6 rect which has complete screen except the visible region of window.
@@ -6136,20 +6149,20 @@ debug_printf("[Desktop] {K__ShowWindow} \n");
 //dirty has two rectangle that is visibe region of the window
 //1=(95,71,223,94)
 //2=(95,95,505,405)
-	debug_printf("[K_Window]{K__ShowWindow}debug after dirty\n");
-	debug_printf("dirty.fCount=%d\n",dirty.FCount());
-	debug_printf("dirty.fDataSize=%d\n",dirty.FDataSize());
+	DEBUG(("[K_Window]{K__ShowWindow}debug after dirty\n"));
+	DEBUG(("dirty.fCount=%d\n",dirty.FCount()));
+	DEBUG(("dirty.fDataSize=%d\n",dirty.FDataSize()));
 	for (int32 i = 0; i < dirty.FCount(); i++) {
-	debug_printf("[K_Window]{K__ShowWindow} inside loop i=%d\n",i);
-		clipping_rect *rect = dirty.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[K_Window]{K__ShowWindow} inside loop i=%d\n",i));
+		STATEMENT(clipping_rect *rect = dirty.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 //end
 
 	if (!affectsOtherWindows) {//it is not exectued as of now
-	debug_printf("[Desktop] {K__ShowWindow} !affectsOtherWindows \n");
+	DEBUG(("[Desktop] {K__ShowWindow} !affectsOtherWindows \n"));
 		// everything that is now visible in the
 		// window needs a redraw, but other windows
 		// are not affected, we can call ProcessDirtyRegion()
@@ -6159,11 +6172,11 @@ debug_printf("[Desktop] {K__ShowWindow} \n");
 		K_MarkDirty(dirty);
 
 	if (window->KServerWindow()->HasDirectFrameBufferAccess()) {
-	debug_printf("[Desktop] {K__ShowWindow} HasDirectFrameBufferAccess \n");
+	DEBUG(("[Desktop] {K__ShowWindow} HasDirectFrameBufferAccess \n"));
 		window->KServerWindow()->HandleDirectConnection(
 			B_DIRECT_START | B_BUFFER_RESET);
 	}
-debug_printf("[Desktop] {K__ShowWindow} ended\n");
+DEBUG(("[Desktop] {K__ShowWindow} ended\n"));
 }
 //khidki end
 
@@ -6202,7 +6215,7 @@ Desktop::_HideWindow(Window* window)
 void
 Desktop::K__HideWindow(K_Window* window)
 {
-debug_printf("[Desktop]{K__HideWindow}\n");
+DEBUG(("[Desktop]{K__HideWindow}\n"));
 
 	if (window->KServerWindow()->IsDirectlyAccessing())
 		window->KServerWindow()->HandleDirectConnection(B_DIRECT_STOP);
@@ -6223,7 +6236,7 @@ debug_printf("[Desktop]{K__HideWindow}\n");
 
 	K_MarkDirty(dirty);
 
-debug_printf("[Desktop]{K__HideWindow}end\n");
+DEBUG(("[Desktop]{K__HideWindow}end\n"));
 }
 //end
 
@@ -6280,7 +6293,7 @@ void
 Desktop::K__UpdateSubsetWorkspaces(K_Window* window, int32 previousIndex,
 	int32 newIndex)
 {
-debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} \n");
+DEBUG(("[Desktop] {K__UpdateSubsetWorkspaces} \n"));
 
 	STRACE(("K__UpdateSubsetWorkspaces(window %p, %s)\n", window,
 		window->Title()));
@@ -6289,21 +6302,21 @@ debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} \n");
 	if (!window->IsNormal() || window->IsHidden())
 		return;
 
-debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} is it here... \n");
+DEBUG(("[Desktop] {K__UpdateSubsetWorkspaces} is it here... \n"));
 
 	for (K_Window* subset = k_fSubsetWindows.FirstWindow(); subset != NULL;
 			subset = subset->NextWindow(k_kSubsetList)) {
-		debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} has k_fSubsetWindows\n");
+		DEBUG(("[Desktop] {K__UpdateSubsetWorkspaces} has k_fSubsetWindows\n"));
 		if (subset->Feel() == B_MODAL_ALL_WINDOW_FEEL
 			|| subset->Feel() == B_FLOATING_ALL_WINDOW_FEEL) {
-			debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} MODAL or FLOATING\n");
+			DEBUG(("[Desktop] {K__UpdateSubsetWorkspaces} MODAL or FLOATING\n"));
 			// These windows are always visible on all workspaces,
 			// no need to update them.
 			continue;
 		}
 
 		if (subset->IsFloating()) {
-			debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} IsFloating \n");
+			DEBUG(("[Desktop] {K__UpdateSubsetWorkspaces} IsFloating \n"));
 			// Floating windows are inserted and removed to the current
 			// workspace as the need arises - they are not handled here
 			// but in _UpdateFront()
@@ -6311,12 +6324,12 @@ debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} is it here... \n");
 		}
 
 		if (subset->HasInSubset(window)) {
-		debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} subset->HasInSubset \n");
+		DEBUG(("[Desktop] {K__UpdateSubsetWorkspaces} subset->HasInSubset \n"));
 			// adopt the workspace change
 			K_SetWindowWorkspaces(subset, subset->SubsetWorkspaces());
 		}
 	}
-debug_printf("[Desktop] {K__UpdateSubsetWorkspaces} ended\n");
+DEBUG(("[Desktop] {K__UpdateSubsetWorkspaces} ended\n"));
 }
 //khidki end
 
@@ -6406,9 +6419,9 @@ void
 Desktop::K__ChangeWindowWorkspaces(K_Window* window, uint32 oldWorkspaces,
 	uint32 newWorkspaces)
 {
-debug_printf("[Desktop] {K__ChangeWindowWorkspaces} \n");
-debug_printf("[Desktop] {K__ChangeWindowWorkspaces} oldWorkspaces =%d and newWorkspaces =%d\n", oldWorkspaces,newWorkspaces);
-debug_printf("[Desktop] {K__ChangeWindowWorkspaces} kMaxWorkspaces =%d\n",kMaxWorkspaces);
+DEBUG(("[Desktop] {K__ChangeWindowWorkspaces} \n"));
+DEBUG(("[Desktop] {K__ChangeWindowWorkspaces} oldWorkspaces =%d and newWorkspaces =%d\n", oldWorkspaces,newWorkspaces));
+DEBUG(("[Desktop] {K__ChangeWindowWorkspaces} kMaxWorkspaces =%d\n",kMaxWorkspaces));
 
 	if (oldWorkspaces == newWorkspaces)
 		return;
@@ -6422,10 +6435,10 @@ debug_printf("[Desktop] {K__ChangeWindowWorkspaces} kMaxWorkspaces =%d\n",kMaxWo
 
 	for (int32 i = 0; i < kMaxWorkspaces; i++) {
 		if (workspace_in_workspaces(i, oldWorkspaces)) {
-		debug_printf("[Desktop] {K__ChangeWindowWorkspaces} workspace_in_workspaces(i, oldWorkspaces)\n");
+		DEBUG(("[Desktop] {K__ChangeWindowWorkspaces} workspace_in_workspaces(i, oldWorkspaces)\n"));
 			// window is on this workspace, is it anymore?
 			if (!workspace_in_workspaces(i, newWorkspaces)) {
-			debug_printf("[Desktop] {K__ChangeWindowWorkspaces} workspace_in_workspaces(i, newWorkspaces\n");
+			DEBUG(("[Desktop] {K__ChangeWindowWorkspaces} workspace_in_workspaces(i, newWorkspaces\n"));
 				K__Windows(i).RemoveWindow(window);
 				if (k_fLastWorkspaceFocus[i] == window)
 					k_fLastWorkspaceFocus[i] = NULL;
@@ -6439,21 +6452,21 @@ debug_printf("[Desktop] {K__ChangeWindowWorkspaces} kMaxWorkspaces =%d\n",kMaxWo
 				}
 			}
 		} else {
-		debug_printf("[Desktop] {K__ChangeWindowWorkspaces} else part workspace_in_workspaces(i, oldWorkspaces)\n");
+		DEBUG(("[Desktop] {K__ChangeWindowWorkspaces} else part workspace_in_workspaces(i, oldWorkspaces)\n"));
 			// window was not on this workspace, is it now?
 			if (workspace_in_workspaces(i, newWorkspaces)) {
-			debug_printf("[Desktop] {K__ChangeWindowWorkspaces} workspace_in_workspaces(i, newWorkspaces))\n");
-			debug_printf("[Desktop] {K__ChangeWindowWorkspaces} i=%d\n",i);
+			DEBUG(("[Desktop] {K__ChangeWindowWorkspaces} workspace_in_workspaces(i, newWorkspaces))\n"));
+			DEBUG(("[Desktop] {K__ChangeWindowWorkspaces} i=%d\n",i));
 				K__Windows(i).AddWindow(window,
 					window->Frontmost(K__Windows(i).FirstWindow(), i));
 
 				if (i == CurrentWorkspace()) {
-				debug_printf("[Desktop] {K__ChangeWindowWorkspaces} i == CurrentWorkspace())\n");
+				DEBUG(("[Desktop] {K__ChangeWindowWorkspaces} i == CurrentWorkspace())\n"));
 					// make the window visible in current workspace
 					window->SetCurrentWorkspace(fCurrentWorkspace);
 
 					if (!window->IsHidden()) {
-					debug_printf("[Desktop] {K__ChangeWindowWorkspaces} !window->IsHidden()\n");
+					DEBUG(("[Desktop] {K__ChangeWindowWorkspaces} !window->IsHidden()\n"));
 						// This only affects other windows if this window has
 						// floating or modal windows that need to be shown as
 						// well
@@ -6482,11 +6495,11 @@ debug_printf("[Desktop] {K__ChangeWindowWorkspaces} kMaxWorkspaces =%d\n",kMaxWo
 
 	// take care about modals and floating windows
 	K__UpdateSubsetWorkspaces(window);
-debug_printf("[Desktop] {K__ChangeWindowWorkspaces} before NOtify... oldWorkspaces =%d and newWorkspaces =%d\n", oldWorkspaces,newWorkspaces);
+DEBUG(("[Desktop] {K__ChangeWindowWorkspaces} before NOtify... oldWorkspaces =%d and newWorkspaces =%d\n", oldWorkspaces,newWorkspaces));
 	K_NotifyWindowWorkspacesChanged(window, newWorkspaces);// tododo
 
 	UnlockAllWindows();
-debug_printf("[Desktop] {K__ChangeWindowWorkspaces} ended\n");
+DEBUG(("[Desktop] {K__ChangeWindowWorkspaces} ended\n"));
 }
 //end
 
@@ -6535,9 +6548,9 @@ Desktop::_BringWindowsToFront(WindowList& windows, int32 list, bool wereVisible)
 void
 Desktop::K__BringWindowsToFront(K_WindowList& windows, int32 list, bool wereVisible)
 {
-	debug_printf("[Desktop] {K__BringWindowsToFront} \n");
-	debug_printf("[Desktop] {K__BringWindowsToFront} wereVisible=%d\n",wereVisible);
-debug_printf("[Desktop] {K__BringWindowsToFront} K_WindowList Count=%d\n",windows.Count());
+	DEBUG(("[Desktop] {K__BringWindowsToFront} \n"));
+	DEBUG(("[Desktop] {K__BringWindowsToFront} wereVisible=%d\n",wereVisible));
+DEBUG(("[Desktop] {K__BringWindowsToFront} K_WindowList Count=%d\n",windows.Count()));
 
 	// we don't need to redraw what is currently
 	// visible of the window
@@ -6556,15 +6569,15 @@ debug_printf("[Desktop] {K__BringWindowsToFront} K_WindowList Count=%d\n",window
 	}
 
 //khidki start
-debug_printf("[Desktop]{K__BringWindowsToFront}debug clean\n");
-	debug_printf("clean.fCount=%d\n",clean.FCount());
-	debug_printf("clean.fDataSize=%d\n",clean.FDataSize());
+DEBUG(("[Desktop]{K__BringWindowsToFront}debug clean\n"));
+	DEBUG(("clean.fCount=%d\n",clean.FCount()));
+	DEBUG(("clean.fDataSize=%d\n",clean.FDataSize()));
 	for (int32 i = 0; i < clean.FCount(); i++) {
-	debug_printf("[Desktop]{K__BringWindowsToFront} inside loop i=%d\n",i);
-		clipping_rect *rect = clean.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[Desktop]{K__BringWindowsToFront} inside loop i=%d\n",i));
+		STATEMENT(clipping_rect *rect = clean.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 //end
 //clean has two react
@@ -6581,15 +6594,15 @@ debug_printf("[Desktop]{K__BringWindowsToFront}debug clean\n");
 //dummy has the screen without the visible part of the window 
 //it has 6 rect
 //khidki start
-debug_printf("[K_Window]{K__BringWindowsToFront}debug dummy\n");
-	debug_printf("dummy.fCount=%d\n",dummy.FCount());
-	debug_printf("dummy.fDataSize=%d\n",dummy.FDataSize());
+DEBUG(("[K_Window]{K__BringWindowsToFront}debug dummy\n"));
+	DEBUG(("dummy.fCount=%d\n",dummy.FCount()));
+	DEBUG(("dummy.fDataSize=%d\n",dummy.FDataSize()));
 	for (int32 i = 0; i < dummy.FCount(); i++) {
-	debug_printf("[K_Window]{K__BringWindowsToFront} inside loop i=%d\n",i);
-		clipping_rect *rect = dummy.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[K_Window]{K__BringWindowsToFront} inside loop i=%d\n",i));
+		STATEMENT(clipping_rect *rect = dummy.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 //end
 
@@ -6602,15 +6615,15 @@ debug_printf("[K_Window]{K__BringWindowsToFront}debug dummy\n");
 //dirty has two rects
 //dirty contains the visible region of the window
 //khidki start
-debug_printf("[K_Window]{K__BringWindowsToFront}debug dirty\n");
-	debug_printf("dirty.fCount=%d\n",dirty.FCount());
-	debug_printf("dirty.fDataSize=%d\n",dirty.FDataSize());
+DEBUG(("[K_Window]{K__BringWindowsToFront}debug dirty\n"));
+	DEBUG(("dirty.fCount=%d\n",dirty.FCount()));
+	DEBUG(("dirty.fDataSize=%d\n",dirty.FDataSize()));
 	for (int32 i = 0; i < dirty.FCount(); i++) {
-	debug_printf("[K_Window]{K__BringWindowsToFront} inside loop i=%d\n",i);
-		clipping_rect *rect = dirty.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[K_Window]{K__BringWindowsToFront} inside loop i=%d\n",i));
+		STATEMENT(clipping_rect *rect = dirty.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 //end
 
@@ -6618,15 +6631,15 @@ debug_printf("[K_Window]{K__BringWindowsToFront}debug dirty\n");
 //khidki start
 //both clean and dirty has the visible region of the window so after exclude 
 //dirty will have 0 rect
-debug_printf("[K_Window]{K__BringWindowsToFront}debug dirty after Exclude(&clean)\n");
-	debug_printf("dirty.fCount=%d\n",dirty.FCount());
-	debug_printf("dirty.fDataSize=%d\n",dirty.FDataSize());
+DEBUG(("[K_Window]{K__BringWindowsToFront}debug dirty after Exclude(&clean)\n"));
+	DEBUG(("dirty.fCount=%d\n",dirty.FCount()));
+	DEBUG(("dirty.fDataSize=%d\n",dirty.FDataSize()));
 	for (int32 i = 0; i < dirty.FCount(); i++) {
-	debug_printf("[K_Window]{K__BringWindowsToFront} inside loop i=%d\n",i);
-		clipping_rect *rect = dirty.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[K_Window]{K__BringWindowsToFront} inside loop i=%d\n",i));
+		STATEMENT(clipping_rect *rect = dirty.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 //end
 	K_MarkDirty(dirty);
@@ -6635,7 +6648,7 @@ debug_printf("[K_Window]{K__BringWindowsToFront}debug dirty after Exclude(&clean
 
 	if (windows.FirstWindow() == k_fBack || k_fBack == NULL)
 	{
-	debug_printf("[K_Window]{K__BringWindowsToFront}windows.FirstWindow() ==k_fBack || k_fBack == NULL\n");
+	DEBUG(("[K_Window]{K__BringWindowsToFront}windows.FirstWindow() ==k_fBack || k_fBack == NULL\n"));
 		K__UpdateBack();
 	}
 }
@@ -6669,7 +6682,7 @@ Desktop::_LastFocusSubsetWindow(Window* window)
 K_Window*
 Desktop::K__LastFocusSubsetWindow(K_Window* window)
 {
-debug_printf("[Desktop] {K__LastFocusSubsetWindow} \n");
+DEBUG(("[Desktop] {K__LastFocusSubsetWindow} \n"));
 
 	if (window == NULL)
 		return NULL;
@@ -6751,7 +6764,7 @@ Desktop::_SendFakeMouseMoved(Window* window)
 bool
 Desktop::K__CheckSendFakeMouseMoved(const K_Window* lastWindowUnderMouse)
 {
-debug_printf("[Desktop] {K_CheckSendFakeMouseMoved} \n");
+DEBUG(("[Desktop] {K_CheckSendFakeMouseMoved} \n"));
 
 	K_Window* window = K_WindowAt(fLastMousePosition);
 	return window != lastWindowUnderMouse;
@@ -6770,7 +6783,7 @@ debug_printf("[Desktop] {K_CheckSendFakeMouseMoved} \n");
 void
 Desktop::K__SendFakeMouseMoved(K_Window* window)
 {
-	debug_printf("[Desktop]{K__SendFakeMouseMoved}\n");
+	DEBUG(("[Desktop]{K__SendFakeMouseMoved}\n"));
 
 	int32 viewToken = B_NULL_TOKEN;
 	EventTarget* target = NULL;
@@ -6791,12 +6804,12 @@ Desktop::K__SendFakeMouseMoved(K_Window* window)
 
 	if (viewToken != B_NULL_TOKEN)
 	{
-	debug_printf("[Desktop]{K__SendFakeMouseMoved}viewToken != B_NULL_TOKEN\n");
+	DEBUG(("[Desktop]{K__SendFakeMouseMoved}viewToken != B_NULL_TOKEN\n"));
 	
 		K_SetViewUnderMouse(window, viewToken);
 	}
 	else {
-	debug_printf("[Desktop]{K__SendFakeMouseMoved}viewToken != B_NULL_TOKEN else part\n");
+	DEBUG(("[Desktop]{K__SendFakeMouseMoved}viewToken != B_NULL_TOKEN else part\n"));
 
 		K_SetViewUnderMouse(NULL, B_NULL_TOKEN);
 		SetCursor(NULL);
@@ -6808,7 +6821,7 @@ Desktop::K__SendFakeMouseMoved(K_Window* window)
 		EventDispatcher().SendFakeMouseMoved(*target, viewToken);
 
 
-debug_printf("[Desktop]{K__SendFakeMouseMoved}end\n");
+DEBUG(("[Desktop]{K__SendFakeMouseMoved}end\n"));
 }
 //end
 
@@ -6855,7 +6868,7 @@ Desktop::_RebuildClippingForAllWindows(BRegion& stillAvailableOnScreen)
 	for (K_Window* window = K_CurrentWindows().LastWindow(); window != NULL;
 			window = window->PreviousWindow(fCurrentWorkspace)) {
 		if (!window->IsHidden()) {
-		debug_printf("[][Desktop]{RebuildClippingForAllWindows}!window->IsHidden()\n");
+		DEBUG(("[][Desktop]{RebuildClippingForAllWindows}!window->IsHidden()\n"));
 			window->SetClipping(&stillAvailableOnScreen);
 			window->SetScreen(_DetermineScreenFor(window->Frame()));
 
@@ -6877,7 +6890,7 @@ Desktop::_RebuildClippingForAllWindows(BRegion& stillAvailableOnScreen)
 void
 Desktop::K__RebuildClippingForAllWindows(BRegion& stillAvailableOnScreen)
 {
-debug_printf("[Desktop]{K__RebuildClippingForAllWindows}\n");
+DEBUG(("[Desktop]{K__RebuildClippingForAllWindows}\n"));
 
 	// the available region on screen starts with the entire screen area
 	// each window on the screen will take a portion from that area
@@ -6885,51 +6898,51 @@ debug_printf("[Desktop]{K__RebuildClippingForAllWindows}\n");
 	// figure out what the entire screen area is
 	stillAvailableOnScreen = fScreenRegion;//here we have the region of complete screen
 //khidki start
-	debug_printf("[Desktop]{K__RebuildClippingForAllWindows}debug stillAvailableOnScreen\n");
-	debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
-	debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+	DEBUG(("[Desktop]{K__RebuildClippingForAllWindows}debug stillAvailableOnScreen\n"));
+	DEBUG(("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount()));
+	DEBUG(("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize()));
 	for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) {
-	debug_printf("[Desktop]{K__RebuildClippingForAllWindows} inside loop i=%d\n",i);
-		clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[Desktop]{K__RebuildClippingForAllWindows} inside loop i=%d\n",i));
+		STATEMENT(clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 	//end
 
-debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
-debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+DEBUG(("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount()));
+DEBUG(("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize()));
 
-clipping_rect clip_bounds = stillAvailableOnScreen.get_Bounds();
-clipping_rect* clip_data = stillAvailableOnScreen.get_Data();
+STATEMENT(clipping_rect clip_bounds = stillAvailableOnScreen.get_Bounds());
+STATEMENT(clipping_rect* clip_data = stillAvailableOnScreen.get_Data());
 
-debug_printf("stillAvailableOnScreen.fBounds.left=%d\n",clip_bounds.left);
-debug_printf("stillAvailableOnScreen.fBounds.top=%d\n",clip_bounds.top);
-debug_printf("stillAvailableOnScreen.fBounds.right=%d\n",clip_bounds.right);
-debug_printf("stillAvailableOnScreen.fBounds.bottom=%d\n",clip_bounds.bottom);
+DEBUG(("stillAvailableOnScreen.fBounds.left=%d\n",clip_bounds.left));
+DEBUG(("stillAvailableOnScreen.fBounds.top=%d\n",clip_bounds.top));
+DEBUG(("stillAvailableOnScreen.fBounds.right=%d\n",clip_bounds.right));
+DEBUG(("stillAvailableOnScreen.fBounds.bottom=%d\n",clip_bounds.bottom));
 
-debug_printf("stillAvailableOnScreen.fData->left=%d\n",clip_data->left);
-debug_printf("stillAvailableOnScreen.fData->top=%d\n",clip_data->top);
-debug_printf("stillAvailableOnScreen.fData->right=%d\n",clip_data->right);
-debug_printf("stillAvailableOnScreen.fData->bottom=%d\n",clip_data->bottom);
+DEBUG(("stillAvailableOnScreen.fData->left=%d\n",clip_data->left));
+DEBUG(("stillAvailableOnScreen.fData->top=%d\n",clip_data->top));
+DEBUG(("stillAvailableOnScreen.fData->right=%d\n",clip_data->right));
+DEBUG(("stillAvailableOnScreen.fData->bottom=%d\n",clip_data->bottom));
 
 	// set clipping of each window
 	for (K_Window* window = K_CurrentWindows().LastWindow(); window != NULL;
 			window = window->PreviousWindow(fCurrentWorkspace)) {
 		if (!window->IsHidden()) {
-			debug_printf("[Desktop]{K_RebuildClippingForAllWindows}!window->IsHidden()\n");
+			DEBUG(("[Desktop]{K_RebuildClippingForAllWindows}!window->IsHidden()\n"));
 			window->SetClipping(&stillAvailableOnScreen);
 			//khidki start
-			debug_printf("[Desktop]{K__RebuildClippingForAllWindows}debug after SetClipping()\n");
-			debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
-			debug_printf("stillAvailableOnScreen.fDataSize=%d\n", stillAvailableOnScreen.FDataSize());
+			DEBUG(("[Desktop]{K__RebuildClippingForAllWindows}debug after SetClipping()\n"));
+			DEBUG(("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount()));
+			DEBUG(("stillAvailableOnScreen.fDataSize=%d\n", stillAvailableOnScreen.FDataSize()));
 			for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) 
 			{
-			debug_printf("[Desktop]{K__RebuildClippingForAllWindows} inside loop2 i=%d\n",i);
-			clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
-			debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			DEBUG(("[Desktop]{K__RebuildClippingForAllWindows} inside loop2 i=%d\n",i));
+			STATEMENT(clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i));//fData[i];
+			DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 			}
 		//end
 			//window->Frame returns fFrame which is rect 100,100,500,400 size of window
@@ -6955,15 +6968,15 @@ debug_printf("stillAvailableOnScreen.fData->bottom=%d\n",clip_data->bottom);
 			//5=(506,95,1023,405)
 			//6=(0,406,1023,767)
 			//khidki start
-	debug_printf("[Desktop]{K__RebuildClippingForAllWindows}debug after Exclude()\n");
-	debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
-	debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+	DEBUG(("[Desktop]{K__RebuildClippingForAllWindows}debug after Exclude()\n"));
+	DEBUG(("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount()));
+	DEBUG(("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize()));
 	for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) {
-	debug_printf("[Desktop]{K__RebuildClippingForAllWindows} inside loop2 i=%d\n",i);
-		clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[Desktop]{K__RebuildClippingForAllWindows} inside loop2 i=%d\n",i));
+		STATEMENT(clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 	//end
 		}
@@ -6986,53 +6999,53 @@ debug_printf("stillAvailableOnScreen.fData->bottom=%d\n",clip_data->bottom);
 			stillAvailableOnScreen.Exclude(&window->VisibleRegion());
 			
 			//khidki start
-	debug_printf("[Desktop]{K__RebuildClippingForAllWindows} in old Window debug Exclude()\n");
-	debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
-	debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+	DEBUG(("[Desktop]{K__RebuildClippingForAllWindows} in old Window debug Exclude()\n"));
+	DEBUG(("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount()));
+	DEBUG(("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize()));
 	for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) {
-	debug_printf("[Desktop]{K__RebuildClippingForAllWindows} inside loop2 i=%d\n",i);
-		clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[Desktop]{K__RebuildClippingForAllWindows} inside loop2 i=%d\n",i));
+		STATEMENT(clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 	//end
 		}
 	}
 
-clip_bounds = stillAvailableOnScreen.get_Bounds();
-clip_data = stillAvailableOnScreen.get_Data();
+STATEMENT(clip_bounds = stillAvailableOnScreen.get_Bounds());
+STATEMENT(clip_data = stillAvailableOnScreen.get_Data());
 
-debug_printf("[Desktop]{K_RebuildClippingForAllWindows} dump clipping\n");
-debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
-debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+DEBUG(("[Desktop]{K_RebuildClippingForAllWindows} dump clipping\n"));
+DEBUG(("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount()));
+DEBUG(("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize()));
 
-debug_printf("stillAvailableOnScreen.fBounds.left=%d\n",clip_bounds.left);
-debug_printf("stillAvailableOnScreen.fBounds.top=%d\n",clip_bounds.top);
-debug_printf("stillAvailableOnScreen.fBounds.right=%d\n",clip_bounds.right);
-debug_printf("stillAvailableOnScreen.fBounds.bottom=%d\n",clip_bounds.bottom);
+DEBUG(("stillAvailableOnScreen.fBounds.left=%d\n",clip_bounds.left));
+DEBUG(("stillAvailableOnScreen.fBounds.top=%d\n",clip_bounds.top));
+DEBUG(("stillAvailableOnScreen.fBounds.right=%d\n",clip_bounds.right));
+DEBUG(("stillAvailableOnScreen.fBounds.bottom=%d\n",clip_bounds.bottom));
 
-debug_printf("stillAvailableOnScreen.fData->left=%d\n",clip_data->left);
-debug_printf("stillAvailableOnScreen.fData->top=%d\n",clip_data->top);
-debug_printf("stillAvailableOnScreen.fData->right=%d\n",clip_data->right);
-debug_printf("stillAvailableOnScreen.fData->bottom=%d\n",clip_data->bottom);
+DEBUG(("stillAvailableOnScreen.fData->left=%d\n",clip_data->left));
+DEBUG(("stillAvailableOnScreen.fData->top=%d\n",clip_data->top));
+DEBUG(("stillAvailableOnScreen.fData->right=%d\n",clip_data->right));
+DEBUG(("stillAvailableOnScreen.fData->bottom=%d\n",clip_data->bottom));
 
 
 //khidki start
-	debug_printf("[Desktop]{K__RebuildClippingForAllWindows}debug before ending K_RebuildClippingForAllWindow()\n");
-	debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
-	debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+	DEBUG(("[Desktop]{K__RebuildClippingForAllWindows}debug before ending K_RebuildClippingForAllWindow()\n"));
+	DEBUG(("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount()));
+	DEBUG(("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize()));
 	for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) {
-	debug_printf("[Desktop]{K__RebuildClippingForAllWindows} inside loop2 i=%d\n",i);
-		clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[Desktop]{K__RebuildClippingForAllWindows} inside loop2 i=%d\n",i));
+		STATEMENT(clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 	//end
 
 
-debug_printf("[Desktop]{K_RebuildClippingForAllWindows}ends\n");
+DEBUG(("[Desktop]{K_RebuildClippingForAllWindows}ends\n"));
 }
 //end
 
@@ -7043,15 +7056,15 @@ Desktop::_TriggerWindowRedrawing(BRegion& newDirtyRegion)
 
 //mak custom start
 //khidki start
-	debug_printf("[Desktop]{_TriggerWindowRedrawing}debug newDirtyRegion beta\n");
-	debug_printf("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount());
-	debug_printf("newDirtyRegion.fDataSize=%d\n",newDirtyRegion.FDataSize());
+	DEBUG(("[Desktop]{_TriggerWindowRedrawing}debug newDirtyRegion beta\n"));
+	DEBUG(("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount()));
+	DEBUG(("newDirtyRegion.fDataSize=%d\n",newDirtyRegion.FDataSize()));
 	for (int32 i = 0; i < newDirtyRegion.FCount(); i++) {
-	debug_printf("[Desktop]{_TriggerWindowRedrawing} inside loop2 i=%d\n",i);
-		clipping_rect *rect = newDirtyRegion.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[Desktop]{_TriggerWindowRedrawing} inside loop2 i=%d\n",i));
+		STATEMENT(clipping_rect *rect = newDirtyRegion.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 	//end
 int i = 0;
@@ -7059,12 +7072,12 @@ int i = 0;
 	for (K_Window* window = K_CurrentWindows().LastWindow(); window != NULL;
 			window = window->PreviousWindow(fCurrentWorkspace))
 	{i++;
-	debug_printf("[Desktop]{_TriggerWindowRedrawing}i=%d\n",i);
-	debug_printf("newDirtyRegion.Intersects(window->VisibleRegion().Frame())=%d\n",newDirtyRegion.Intersects(window->VisibleRegion().Frame()));//false
+	DEBUG(("[Desktop]{_TriggerWindowRedrawing}i=%d\n",i));
+	DEBUG(("newDirtyRegion.Intersects(window->VisibleRegion().Frame())=%d\n",newDirtyRegion.Intersects(window->VisibleRegion().Frame())));//false
 		if (!window->IsHidden()
 			&& newDirtyRegion.Intersects(window->VisibleRegion().Frame()))
 		{//not executed
-		debug_printf("[Desktop]{_TriggerWindowRedrawing}K_Window before window->ProcessDrtyRegion()\n");
+		DEBUG(("[Desktop]{_TriggerWindowRedrawing}K_Window before window->ProcessDrtyRegion()\n"));
 			window->ProcessDirtyRegion(newDirtyRegion);
 		}
 	}
@@ -7088,7 +7101,7 @@ int i = 0;
 void
 Desktop::K__TriggerWindowRedrawing(BRegion& newDirtyRegion)
 {
-debug_printf("[Desktop]{K__TriggerWindowRedrawing}\n");
+DEBUG(("[Desktop]{K__TriggerWindowRedrawing}\n"));
 
 //mak custom start
 
@@ -7098,34 +7111,34 @@ debug_printf("[Desktop]{K__TriggerWindowRedrawing}\n");
 		if (!window->IsHidden()
 			&& newDirtyRegion.Intersects(window->VisibleRegion().Frame()))
 		{
-		debug_printf("[Desktop]{K__TriggerWindowRedrawing}for Window before window->ProcessDirtyRegion()\n");
+		DEBUG(("[Desktop]{K__TriggerWindowRedrawing}for Window before window->ProcessDirtyRegion()\n"));
 
 			window->ProcessDirtyRegion(newDirtyRegion);
 
-			debug_printf("[Desktop]{K__TriggerWindowRedrawing} dumping after processing newDirtyRegion from BWindow\n");
-			debug_printf("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount());
-			debug_printf("newDirtyRegion.fDataSize=%d\n", newDirtyRegion.FDataSize());
+			DEBUG(("[Desktop]{K__TriggerWindowRedrawing} dumping after processing newDirtyRegion from BWindow\n"));
+			DEBUG(("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount()));
+			DEBUG(("newDirtyRegion.fDataSize=%d\n", newDirtyRegion.FDataSize()));
 			for (int32 i = 0; i < newDirtyRegion.FCount(); i++) 
 			{
-			debug_printf("[Desktop]{K__TriggerWindowRedrawing} inside loop i=%d\n",i);
-			clipping_rect *rect = newDirtyRegion.get_DataArray(i);//fData[i];
-			debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			DEBUG(("[Desktop]{K__TriggerWindowRedrawing} inside loop i=%d\n",i));
+			STATEMENT(clipping_rect *rect = newDirtyRegion.get_DataArray(i));//fData[i];
+			DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 			}
 		}
 	}
 //end
-	debug_printf("[Desktop]{K__TriggerWindowRedrawing} dumping after processing newDirtyRegion after BWindow before KWindow\n");
-	debug_printf("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount());
-	debug_printf("newDirtyRegion.fDataSize=%d\n", newDirtyRegion.FDataSize());
+	DEBUG(("[Desktop]{K__TriggerWindowRedrawing} dumping after processing newDirtyRegion after BWindow before KWindow\n"));
+	DEBUG(("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount()));
+	DEBUG(("newDirtyRegion.fDataSize=%d\n", newDirtyRegion.FDataSize()));
 	for (int32 i = 0; i < newDirtyRegion.FCount(); i++) 
 	{
-		debug_printf("[Desktop]{K__TriggerWindowRedrawing} inside loop i=%d\n",i);
-		clipping_rect *rect = newDirtyRegion.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+		DEBUG(("[Desktop]{K__TriggerWindowRedrawing} inside loop i=%d\n",i));
+		STATEMENT(clipping_rect *rect = newDirtyRegion.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 
 
@@ -7136,19 +7149,19 @@ debug_printf("[Desktop]{K__TriggerWindowRedrawing}\n");
 		if (!window->IsHidden()
 			&& newDirtyRegion.Intersects(window->VisibleRegion().Frame()))
 			{
-			debug_printf("[Desktop]{K__TriggerWindowRedrawing}for K_Window before window->ProcessDirtyRegion()\n");
+			DEBUG(("[Desktop]{K__TriggerWindowRedrawing}for K_Window before window->ProcessDirtyRegion()\n"));
 			window->ProcessDirtyRegion(newDirtyRegion);
 
-			debug_printf("[Desktop]{K__TriggerWindowRedrawing} dumping after processing newDirtyRegion from KWindow");
-			debug_printf("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount());
-			debug_printf("newDirtyRegion.fDataSize=%d\n", newDirtyRegion.FDataSize());
+			DEBUG(("[Desktop]{K__TriggerWindowRedrawing} dumping after processing newDirtyRegion from KWindow"));
+			DEBUG(("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount()));
+			DEBUG(("newDirtyRegion.fDataSize=%d\n", newDirtyRegion.FDataSize()));
 			for (int32 i = 0; i < newDirtyRegion.FCount(); i++) 
 			{
-			debug_printf("[Desktop]{K__TriggerWindowRedrawing} inside loop i=%d\n",i);
-			clipping_rect *rect = newDirtyRegion.get_DataArray(i);//fData[i];
-			debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+			DEBUG(("[Desktop]{K__TriggerWindowRedrawing} inside loop i=%d\n",i));
+			STATEMENT(clipping_rect *rect = newDirtyRegion.get_DataArray(i));//fData[i];
+			DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 			}
 			}
 	}
@@ -7167,19 +7180,19 @@ debug_printf("[Desktop]{K__TriggerWindowRedrawing}\n");
 */
 
 
-	debug_printf("[Desktop]{K__TriggerWindowRedrawing} dumping after processing newDirtyRegion final dump");
-	debug_printf("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount());
-	debug_printf("newDirtyRegion.fDataSize=%d\n", newDirtyRegion.FDataSize());
+	DEBUG(("[Desktop]{K__TriggerWindowRedrawing} dumping after processing newDirtyRegion final dump"));
+	DEBUG(("newDirtyRegion.fCount=%d\n",newDirtyRegion.FCount()));
+	DEBUG(("newDirtyRegion.fDataSize=%d\n", newDirtyRegion.FDataSize()));
 	for (int32 i = 0; i < newDirtyRegion.FCount(); i++) 
 	{
-		debug_printf("[Desktop]{K__TriggerWindowRedrawing} inside loop i=%d\n",i);
-		clipping_rect *rect = newDirtyRegion.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+		DEBUG(("[Desktop]{K__TriggerWindowRedrawing} inside loop i=%d\n",i));
+		STATEMENT(clipping_rect *rect = newDirtyRegion.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 
-debug_printf("[Desktop]{K__TriggerWindowRedrawing}ends\n");
+DEBUG(("[Desktop]{K__TriggerWindowRedrawing}ends\n"));
 }
 //end
 
@@ -7188,18 +7201,18 @@ const rgb_color desktop_bckgrnd_col={64,64,64,255};//set the desktop background 
 void
 Desktop::_SetBackground(BRegion& background)
 {
-debug_printf("[Desktop] {_SetBackground}.\n");
-debug_printf("[Desktop] {_SetBackground} debuging background region...\n");
-	debug_printf("background.fCount=%d\n",background.FCount());
-	debug_printf("background.fDataSize=%d\n",background.FDataSize());
+DEBUG(("[Desktop] {_SetBackground}.\n"));
+DEBUG(("[Desktop] {_SetBackground} debuging background region...\n"));
+	DEBUG(("background.fCount=%d\n",background.FCount()));
+	DEBUG(("background.fDataSize=%d\n",background.FDataSize()));
 	for (int32 i = 0; i < background.FCount(); i++) {
-	debug_printf("[Desktop] {_SetBackground} inside loop i=%d\n",i);
-		clipping_rect *rect = background.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[Desktop] {_SetBackground} inside loop i=%d\n",i));
+		STATEMENT(clipping_rect *rect = background.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
-debug_printf("[Desktop] {_SetBackground} debuging background region done and dusted...\n");
+DEBUG(("[Desktop] {_SetBackground} debuging background region done and dusted...\n"));
 
 	// NOTE: the drawing operation is caried out
 	// in the clipping region rebuild, but it is
@@ -7210,73 +7223,73 @@ debug_printf("[Desktop] {_SetBackground} debuging background region done and dus
 	// and redraw the dirty background
 	BRegion dirtyBackground(background);
 
-debug_printf("[Desktop] {_SetBackground} debuging dirtyBackground region just created.\n");
-debug_printf("dirtyBackground.fCount=%d\n", dirtyBackground.FCount());
-debug_printf("dirtyBackground.fDataSize=%d\n", dirtyBackground.FDataSize());
+DEBUG(("[Desktop] {_SetBackground} debuging dirtyBackground region just created.\n"));
+DEBUG(("dirtyBackground.fCount=%d\n", dirtyBackground.FCount()));
+DEBUG(("dirtyBackground.fDataSize=%d\n", dirtyBackground.FDataSize()));
 for (int32 i = 0; i < dirtyBackground.FCount(); i++) {
-debug_printf("[Desktop] {_SetBackground} inside loop i=%d\n",i);
-	clipping_rect *rect = dirtyBackground.get_DataArray(i);//fData[i];
-	debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+DEBUG(("[Desktop] {_SetBackground} inside loop i=%d\n",i));
+	STATEMENT(clipping_rect *rect = dirtyBackground.get_DataArray(i));//fData[i];
+	DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 }
-debug_printf("[Desktop] {_SetBackground} debuging dirtyBackground region done and dusted.\n");
+DEBUG(("[Desktop] {_SetBackground} debuging dirtyBackground region done and dusted.\n"));
 
 
-debug_printf("[Desktop] {_SetBackground} debuging fBackgroundRegion region...\n");
-debug_printf("fBackgroundRegion.fCount = %d\n", fBackgroundRegion.FCount());
-debug_printf("fBackgroundRegion.fDataSize = %d\n", fBackgroundRegion.FDataSize());
+DEBUG(("[Desktop] {_SetBackground} debuging fBackgroundRegion region...\n"));
+DEBUG(("fBackgroundRegion.fCount = %d\n", fBackgroundRegion.FCount()));
+DEBUG(("fBackgroundRegion.fDataSize = %d\n", fBackgroundRegion.FDataSize()));
 for (int32 i = 0; i < fBackgroundRegion.FCount(); i++) {
-	debug_printf("[Desktop] {_SetBackground} inside loop i=%d\n",i);
-	clipping_rect *rect = fBackgroundRegion.get_DataArray(i);//fData[i];
-	debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[Desktop] {_SetBackground} inside loop i=%d\n",i));
+	STATEMENT(clipping_rect *rect = fBackgroundRegion.get_DataArray(i));//fData[i];
+	DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
-debug_printf("[Desktop] {_SetBackground} debuging fBackgroundRegion region done and dusted...\n");
+DEBUG(("[Desktop] {_SetBackground} debuging fBackgroundRegion region done and dusted...\n"));
 
 	dirtyBackground.Exclude(&fBackgroundRegion);
-debug_printf("[Desktop] {_SetBackground} debuging dirtyBackground region after excluding fBackgroundRegion.\n");
-debug_printf("dirtyBackground.fCount = %d\n", dirtyBackground.FCount());
-debug_printf("dirtyBackground.fDataSize = %d\n", dirtyBackground.FDataSize());
+DEBUG(("[Desktop] {_SetBackground} debuging dirtyBackground region after excluding fBackgroundRegion.\n"));
+DEBUG(("dirtyBackground.fCount = %d\n", dirtyBackground.FCount()));
+DEBUG(("dirtyBackground.fDataSize = %d\n", dirtyBackground.FDataSize()));
 for (int32 i = 0; i < dirtyBackground.FCount(); i++) {
-debug_printf("[Desktop] {_SetBackground} inside loop i=%d\n",i);
-	clipping_rect *rect = dirtyBackground.get_DataArray(i);//fData[i];
-	debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+DEBUG(("[Desktop] {_SetBackground} inside loop i=%d\n",i));
+	STATEMENT(clipping_rect *rect = dirtyBackground.get_DataArray(i));//fData[i];
+	DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 }
-debug_printf("[Desktop] {_SetBackground} debuging dirtyBackground region done after excluding fBackground Region.\n");
+DEBUG(("[Desktop] {_SetBackground} debuging dirtyBackground region done after excluding fBackground Region.\n"));
 
 	dirtyBackground.IntersectWith(&background);
-debug_printf("[Desktop] {_SetBackground} debuging dirtyBackground region after IntersectWith background.\n");
-debug_printf("dirtyBackground.fCount = %d\n", dirtyBackground.FCount());
-debug_printf("dirtyBackground.fDataSize = %d\n", dirtyBackground.FDataSize());
+DEBUG(("[Desktop] {_SetBackground} debuging dirtyBackground region after IntersectWith background.\n"));
+DEBUG(("dirtyBackground.fCount = %d\n", dirtyBackground.FCount()));
+DEBUG(("dirtyBackground.fDataSize = %d\n", dirtyBackground.FDataSize()));
 for (int32 i = 0; i < dirtyBackground.FCount(); i++) {
-debug_printf("[Desktop] {_SetBackground} inside loop i=%d\n",i);
-	clipping_rect *rect = dirtyBackground.get_DataArray(i);//fData[i];
-	debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+DEBUG(("[Desktop] {_SetBackground} inside loop i=%d\n",i));
+	STATEMENT(clipping_rect *rect = dirtyBackground.get_DataArray(i));//fData[i];
+	DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 }
-debug_printf("[Desktop] {_SetBackground} debuging dirtyBackground region done after IntersectWith background.\n");
+DEBUG(("[Desktop] {_SetBackground} debuging dirtyBackground region done after IntersectWith background.\n"));
 
 	fBackgroundRegion = background;
-debug_printf("[Desktop] {_SetBackground} debuging fBackgroundRegion after assigned background...\n");
-debug_printf("fBackgroundRegion.fCount = %d\n", fBackgroundRegion.FCount());
-debug_printf("fBackgroundRegion.fDataSize = %d\n", fBackgroundRegion.FDataSize());
+DEBUG(("[Desktop] {_SetBackground} debuging fBackgroundRegion after assigned background...\n"));
+DEBUG(("fBackgroundRegion.fCount = %d\n", fBackgroundRegion.FCount()));
+DEBUG(("fBackgroundRegion.fDataSize = %d\n", fBackgroundRegion.FDataSize()));
 for (int32 i = 0; i < fBackgroundRegion.FCount(); i++) {
-	debug_printf("[Desktop] {_SetBackground} inside loop i=%d\n",i);
-	clipping_rect *rect = fBackgroundRegion.get_DataArray(i);//fData[i];
-	debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[Desktop] {_SetBackground} inside loop i=%d\n",i));
+	STATEMENT(clipping_rect *rect = fBackgroundRegion.get_DataArray(i));//fData[i];
+	DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
-debug_printf("[Desktop] {_SetBackground} debuging fBackgroundRegion region done after assigned background.\n");
+DEBUG(("[Desktop] {_SetBackground} debuging fBackgroundRegion region done after assigned background.\n"));
 	if (dirtyBackground.Frame().IsValid()) {
-		debug_printf("[Desktop] {_SetBackground} dirtyBackground.Frame().IsValid()\n");
+		DEBUG(("[Desktop] {_SetBackground} dirtyBackground.Frame().IsValid()\n"));
 		if (GetDrawingEngine()->LockParallelAccess()) {
-			debug_printf("[Desktop] {_SetBackground} GetDrawingEngine()->LockParalledAccess().\n");
+			DEBUG(("[Desktop] {_SetBackground} GetDrawingEngine()->LockParalledAccess().\n"));
 			GetDrawingEngine()->FillRegion(dirtyBackground,
 				fWorkspaces[fCurrentWorkspace].Color());
 
@@ -7333,22 +7346,22 @@ Desktop::RebuildAndRedrawAfterWindowChange(Window* changedWindow,
 	for (K_Window* window = K_CurrentWindows().LastWindow(); window != NULL;
 			window = window->PreviousWindow(fCurrentWorkspace)) {
 		if (!window->IsHidden()) {
-		debug_printf("[Desktop]{RebuildAndRedrawAfterWindowChange} K_Window loop\n");
+		DEBUG(("[Desktop]{RebuildAndRedrawAfterWindowChange} K_Window loop\n"));
 			//if (window == changedWindow)
 			//	dirty.IntersectWith(&stillAvailableOnScreen);
 
 			window->SetClipping(&stillAvailableOnScreen);
 			
 			//khidki start
-	debug_printf("[Desktop]{RebuildAndRedrawAfterWindowChange} debug stillAvailableOnScreen after SetClipping in K_Window\n");
-	debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
-	debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+	DEBUG(("[Desktop]{RebuildAndRedrawAfterWindowChange} debug stillAvailableOnScreen after SetClipping in K_Window\n"));
+	DEBUG(("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount()));
+	DEBUG(("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize()));
 	for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) {
-	debug_printf("[Desktop]{RebuildAndRedrawAfterWindowChange} inside loop i=%d\n",i);
-		clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[Desktop]{RebuildAndRedrawAfterWindowChange} inside loop i=%d\n",i));
+		STATEMENT(clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 //end
 
@@ -7364,15 +7377,15 @@ Desktop::RebuildAndRedrawAfterWindowChange(Window* changedWindow,
 			stillAvailableOnScreen.Exclude(&window->VisibleRegion());
 			
 			//khidki start
-	debug_printf("[Desktop]{RebuildAndRedrawAfterWindowChange} debug stillAvailableOnScreen after exclude in K_Window\n");
-	debug_printf("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount());
-	debug_printf("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize());
+	DEBUG(("[Desktop]{RebuildAndRedrawAfterWindowChange} debug stillAvailableOnScreen after exclude in K_Window\n"));
+	DEBUG(("stillAvailableOnScreen.fCount=%d\n",stillAvailableOnScreen.FCount()));
+	DEBUG(("stillAvailableOnScreen.fDataSize=%d\n",stillAvailableOnScreen.FDataSize()));
 	for (int32 i = 0; i < stillAvailableOnScreen.FCount(); i++) {
-	debug_printf("[Desktop]{RebuildAndRedrawAfterWindowChange} inside loop i=%d\n",i);
-		clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i);//fData[i];
-		debug_printf("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
+	DEBUG(("[Desktop]{RebuildAndRedrawAfterWindowChange} inside loop i=%d\n",i));
+		STATEMENT(clipping_rect *rect = stillAvailableOnScreen.get_DataArray(i));//fData[i];
+		DEBUG(("data[%" B_PRId32 "] = BRect(l:%" B_PRId32 ".0, t:%" B_PRId32
 			".0, r:%" B_PRId32 ".0, b:%" B_PRId32 ".0)\n",
-			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1);
+			i, rect->left, rect->top, rect->right - 1, rect->bottom - 1));
 	}
 //end
 
@@ -7413,11 +7426,11 @@ void
 Desktop::K_RebuildAndRedrawAfterWindowChange(K_Window* changedWindow,
 	BRegion& dirty)
 {
-debug_printf("[Desktop]{K_RebuildAndRedrawAfterWindowChange}\n");
+DEBUG(("[Desktop]{K_RebuildAndRedrawAfterWindowChange}\n"));
 
 	ASSERT_MULTI_WRITE_LOCKED(fWindowLock);
 	if (!changedWindow->IsVisible() || dirty.CountRects() == 0){
-	debug_printf("[Desktop]{K_RebuildAndRedrawAfterWindowChange} either window is not visible or dirty countrects =0\n");
+	DEBUG(("[Desktop]{K_RebuildAndRedrawAfterWindowChange} either window is not visible or dirty countrects =0\n"));
 		return;
 	}
 
