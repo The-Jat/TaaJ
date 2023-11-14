@@ -102,6 +102,7 @@ for platform in [ MultiBootSubDirSetup ] {
 		}
 
 
+SEARCH_SOURCE += [ FDirName $(SUBDIR) drawing ] ;
 		BootStaticLibrary [ MultiBootGristFiles boot_loader ] :
 			PathBlocklist.cpp
 			elf.cpp
@@ -119,6 +120,9 @@ for platform in [ MultiBootSubDirSetup ] {
 			system_revision.c
 			vfs.cpp
 			vm.cpp
+			
+			# FrameBuffer Drawing things.
+			draw.cpp
 
 			# libroot
 			driver_settings.cpp

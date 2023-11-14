@@ -258,6 +258,8 @@ console_check_boot_keys(void)
 			return BOOT_OPTION_DEBUG_OUTPUT;
 		if (key.UnicodeChar == ' ')
 			return BOOT_OPTION_MENU;
+		if (key.UnicodeChar == 'j')
+			return BOOT_JS_MENU;
 	}
 	return 0;
 }

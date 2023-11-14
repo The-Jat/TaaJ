@@ -19,6 +19,8 @@
 
 #include "file_systems/packagefs/packagefs.h"
 
+#include "drawing/draw.h"
+
 
 //#define TRACE_MAIN
 #ifdef TRACE_MAIN
@@ -154,6 +156,12 @@ main(stage2_args *args)
 			if (!buffer) {
 				panic("Could not allocate memory for the boot volume kernel "
 					"arguments");
+			}
+			
+			// Loader Drawing Menu.
+			if ((platform_boot_options() & BOOT_JS_MENU) != 0) {
+				dprintf("BOOT_JS_MENU...");
+				fb_putpixel(100,100, 0xFFFF0000);
 			}
 
 			buffer = (void*)(((addr_t)buffer + 7) & ~(addr_t)0x7);
