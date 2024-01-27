@@ -20,7 +20,7 @@
 #include "Window.h"
 
 
-static rgb_color kDefaultColor = (rgb_color){ 51, 102, 152, 255 };
+static rgb_color kDefaultColor = (rgb_color){ 112, 112, 112, 255 };
 
 
 Workspace::Private::Private()
