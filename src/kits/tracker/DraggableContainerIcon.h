@@ -31,59 +31,32 @@ of Be Incorporated in the United States and other countries. Other brand product
 names are registered trademarks or trademarks of their respective holders.
 All rights reserved.
 */
-#ifndef _TRACKER_SETTINGS_WINDOW_H
-#define _TRACKER_SETTINGS_WINDOW_H
+#ifndef _DRAGGABLE_CONTAINER_ICON_H
+#define _DRAGGABLE_CONTAINER_ICON_H
 
 
-#include <Box.h>
-#include <Button.h>
-#include <ListView.h>
-#include <ListItem.h>
-#include <Window.h>
-
-#include "SettingsViews.h"
+#include <View.h>
 
 
 namespace BPrivate {
 
-class TrackerSettingsWindow : public BWindow {
-public:
-	TrackerSettingsWindow();
+class DraggableContainerIcon : public BView {
+	public:
+		DraggableContainerIcon(BSize iconSize);
 
-	bool QuitRequested();
-	void MessageReceived(BMessage* message);
-	void Show();
+		virtual void MouseDown(BPoint where);
+		virtual void MouseUp(BPoint);
+		virtual void MouseMoved(BPoint where, uint32, const BMessage*);
+		virtual void Draw(BRect updateRect);
 
-	enum SettingsPage {
-		kDesktopSettings,
-		kWindowsSettings,
-		kTrashSettings,
-		kSpaceBarSettings,
-		kAutomountSettings
-	};
-
-	void ShowPage(SettingsPage page);
-
-private:
-	SettingsView* _ViewAt(int32 i);
-
-	void _HandleChangedContents();
-	void _HandlePressedDefaultsButton();
-	void _HandlePressedRevertButton();
-	void _HandleChangedSettingsView();
-	void _UpdateButtons();
-
-	BListView*	fSettingsTypeListView;
-	BBox*		fSettingsContainerBox;
-	BButton*	fDefaultsButton;
-	BButton*	fRevertButton;
-
-	typedef BWindow _inherited;
+	private:
+		BSize	fIconSize;
+		uint32	fDragButton;
+		BPoint	fClickPoint;
+		bool	fDragStarted;
 };
 
-} // namespace BPrivate
-
-using namespace BPrivate;
+}	// namespace BPrivate
 
 
-#endif	// _TRACKER_SETTINGS_WINDOW_H
+#endif	// _DRAGGABLE_CONTAINER_ICON_H

@@ -168,11 +168,10 @@ key_down_filter(BMessage* message, BHandler** handler, BMessageFilter* filter)
 
 TFilePanel::TFilePanel(file_panel_mode mode, BMessenger* target,
 	const BEntry* startDir, uint32 nodeFlavors, bool multipleSelection,
-	BMessage* message, BRefFilter* filter, uint32 containerWindowFlags,
-	window_look look, window_feel feel, bool hideWhenDone)
+	BMessage* message, BRefFilter* filter, uint32 openFlags, window_look look,
+	window_feel feel, uint32 windowFlags, uint32 workspace, bool hideWhenDone)
 	:
-	BContainerWindow(0, containerWindowFlags, look, feel, 0,
-		B_CURRENT_WORKSPACE, false),
+	BContainerWindow(0, openFlags, look, feel, windowFlags, workspace, false),
 	fDirMenu(NULL),
 	fDirMenuField(NULL),
 	fTextControl(NULL),
@@ -970,9 +969,7 @@ TFilePanel::AddFileContextMenus(BMenu* menu)
 		new BMessage(kEditItem), 'E'));
 	menu->AddItem(new BMenuItem(B_TRANSLATE("Duplicate"),
 		new BMessage(kDuplicateSelection), 'D'));
-	menu->AddItem(new BMenuItem(TrackerSettings().DontMoveFilesToTrash()
-		? B_TRANSLATE("Delete")
-		: B_TRANSLATE("Move to Trash"),
+	menu->AddItem(new BMenuItem(B_TRANSLATE("Move to Trash"),
 		new BMessage(kMoveToTrash), 'T'));
 	menu->AddSeparatorItem();
 

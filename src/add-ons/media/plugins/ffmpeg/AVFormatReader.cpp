@@ -48,6 +48,12 @@ extern "C" {
 
 #define ERROR(a...) fprintf(stderr, a)
 
+// Compatibility with old ffmpeg 4.x, where the getters didn't exist yet
+#if LIBAVCODEC_VERSION_MAJOR < 60
+#define avformat_index_get_entry(stream, index) (&(stream)->index_entries[(index)])
+#define avformat_index_get_entries_count(stream) ((stream)->nb_index_entries)
+#endif
+
 
 static uint32
 avformat_to_beos_byte_order(AVSampleFormat format)
@@ -581,8 +587,8 @@ StreamBase::Seek(uint32 flags, int64* frame, bigtime_t* time)
 			TRACE("  av_index_search_timestamp() failed\n");
 		} else {
 			if (index > 0) {
-				const AVIndexEntry& entry = fStream->index_entries[index];
-				streamTimeStamp = entry.timestamp;
+				const AVIndexEntry* entry = avformat_index_get_entry(fStream, index);
+				streamTimeStamp = entry->timestamp;
 			} else {
 				// Some demuxers use the first index entry to store some
 				// other information, like the total playing time for example.
@@ -596,7 +602,7 @@ StreamBase::Seek(uint32 flags, int64* frame, bigtime_t* time)
 
 			if (timeDiff > 1000000
 				&& (fStreamBuildsIndexWhileReading
-					|| index == fStream->nb_index_entries - 1)) {
+					|| index == avformat_index_get_entries_count(fStream) - 1)) {
 				// If the stream is building the index on the fly while parsing
 				// it, we only have entries in the index for positions already
 				// decoded, i.e. we cannot seek into the future. In that case,
@@ -937,6 +943,28 @@ AVFormatReader::Stream::~Stream()
 }
 
 
+static int
+get_channel_count(AVCodecParameters* context)
+{
+#if LIBAVCODEC_VERSION_MAJOR >= 60
+	return context->ch_layout.nb_channels;
+#else
+	return context->channels;
+#endif
+}
+
+
+static int
+get_channel_mask(AVCodecParameters* context)
+{
+#if LIBAVCODEC_VERSION_MAJOR >= 60
+	return context->ch_layout.u.mask;
+#else
+	return context->channel_layout;
+#endif
+}
+
+
 status_t
 AVFormatReader::Stream::Init(int32 virtualIndex)
 {
@@ -1046,8 +1074,8 @@ AVFormatReader::Stream::Init(int32 virtualIndex)
 	switch (format->type) {
 		case B_MEDIA_RAW_AUDIO:
 			format->u.raw_audio.frame_rate = (float)codecParams->sample_rate;
-			format->u.raw_audio.channel_count = codecParams->channels;
-			format->u.raw_audio.channel_mask = codecParams->channel_layout;
+			format->u.raw_audio.channel_count = get_channel_count(codecParams);
+			format->u.raw_audio.channel_mask = get_channel_mask(codecParams);
 			ConvertAVSampleFormatToRawAudioFormat(
 				(AVSampleFormat)codecParams->format,
 				format->u.raw_audio.format);
@@ -1071,10 +1099,8 @@ AVFormatReader::Stream::Init(int32 virtualIndex)
 			format->u.encoded_audio.output.frame_rate
 				= (float)codecParams->sample_rate;
 			// Channel layout bits match in Be API and FFmpeg.
-			format->u.encoded_audio.output.channel_count
-				= codecParams->channels;
-			format->u.encoded_audio.multi_info.channel_mask
-				= codecParams->channel_layout;
+			format->u.encoded_audio.output.channel_count = get_channel_count(codecParams);
+			format->u.encoded_audio.multi_info.channel_mask = get_channel_mask(codecParams);
 			format->u.encoded_audio.output.byte_order
 				= avformat_to_beos_byte_order(
 					(AVSampleFormat)codecParams->format);
@@ -1088,7 +1114,7 @@ AVFormatReader::Stream::Init(int32 virtualIndex)
 					= codecParams->block_align;
 			} else {
 				format->u.encoded_audio.output.buffer_size
-					= codecParams->frame_size * codecParams->channels
+					= codecParams->frame_size * get_channel_count(codecParams)
 						* (format->u.encoded_audio.output.format
 							& media_raw_audio_format::B_AUDIO_SIZE_MASK);
 			}

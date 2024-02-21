@@ -1610,7 +1610,6 @@ OHCI::_SubmitIsochronousTransfer(Transfer *transfer)
 {
 	Pipe *pipe = transfer->TransferPipe();
 	bool directionIn = (pipe->Direction() == Pipe::In);
-	usb_isochronous_data *isochronousData = transfer->IsochronousData();
 
 	ohci_isochronous_td *firstDescriptor = NULL;
 	ohci_isochronous_td *lastDescriptor = NULL;
@@ -1632,12 +1631,6 @@ OHCI::_SubmitIsochronousTransfer(Transfer *transfer)
 	if (pipe->Direction() == Pipe::Out)
 		_WriteIsochronousDescriptorChain(firstDescriptor,
 			transfer->Vector(), transfer->VectorCount(), transfer->IsPhysical());
-	else
-		// Initialize the packet descriptors
-		for (uint32 i = 0; i < isochronousData->packet_count; i++) {
-			isochronousData->packet_descriptors[i].actual_length = 0;
-			isochronousData->packet_descriptors[i].status = B_NO_INIT;
-		}
 
 	// Add to the transfer list
 	ohci_endpoint_descriptor *endpoint
@@ -2601,10 +2594,10 @@ OHCI::_GetStatusOfConditionCode(uint8 conditionCode)
 			return B_DEV_DATA_UNDERRUN;
 
 		case OHCI_TD_CONDITION_BUFFER_OVERRUN:
-			return B_DEV_FIFO_OVERRUN;
+			return B_DEV_WRITE_ERROR;
 
 		case OHCI_TD_CONDITION_BUFFER_UNDERRUN:
-			return B_DEV_FIFO_UNDERRUN;
+			return B_DEV_READ_ERROR;
 
 		case OHCI_TD_CONDITION_NOT_ACCESSED:
 			return B_DEV_PENDING;

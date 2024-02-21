@@ -1314,12 +1314,6 @@ UHCI::SubmitIsochronous(Transfer *transfer)
 		generic_io_vec *vector = transfer->Vector();
 		WriteIsochronousDescriptorChain(isoRequest,
 			isochronousData->packet_count, vector);
-	} else {
-		// Initialize the packet descriptors
-		for (uint32 i = 0; i < isochronousData->packet_count; i++) {
-			isochronousData->packet_descriptors[i].actual_length = 0;
-			isochronousData->packet_descriptors[i].status = B_NO_INIT;
-		}
 	}
 
 	TRACE("isochronous submitted size=%ld bytes, TDs=%" B_PRId32 ", "
@@ -1533,7 +1527,7 @@ UHCI::FinishTransfers()
 						// the error counter counted down to zero, report why
 						int32 reasons = 0;
 						if (status & TD_STATUS_ERROR_BUFFER) {
-							callbackStatus = transfer->incoming ? B_DEV_DATA_OVERRUN : B_DEV_DATA_UNDERRUN;
+							callbackStatus = transfer->incoming ? B_DEV_WRITE_ERROR : B_DEV_READ_ERROR;
 							reasons++;
 						}
 						if (status & TD_STATUS_ERROR_TIMEOUT) {
@@ -1553,7 +1547,7 @@ UHCI::FinishTransfers()
 							callbackStatus = B_DEV_MULTIPLE_ERRORS;
 					} else if (status & TD_STATUS_ERROR_BABBLE) {
 						// there is a babble condition
-						callbackStatus = transfer->incoming ? B_DEV_FIFO_OVERRUN : B_DEV_FIFO_UNDERRUN;
+						callbackStatus = transfer->incoming ? B_DEV_DATA_OVERRUN : B_DEV_DATA_UNDERRUN;
 					} else {
 						// if the error counter didn't count down to zero
 						// and there was no babble, then this halt was caused
