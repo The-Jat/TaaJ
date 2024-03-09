@@ -1,0 +1,6 @@
+[submodule "src/addons/decorators/Win11Decorator"]
+	path = src/addons/decorators/Win11Decorator
+	url = https://github.com/The-Jat/Win11Decorator
+[submodule "src/add-ons/decorators/Win11Decorator"]
+	path = src/add-ons/decorators/Win11Decorator
+	url = https://github.com/The-Jat/Win11Decorator

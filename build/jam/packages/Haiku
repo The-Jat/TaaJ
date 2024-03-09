@@ -265,6 +265,12 @@ CopyDirectoryToPackage data : <mimedb>mime_db : : : isTarget ;
 AddDirectoryToPackage apps : system-apps.rdef ;
 AddDirectoryToPackage preferences : system-preferences.rdef ;
 
+# Moved from the HaikuExtra Packages.
+# Decorators
+AddFilesToPackage add-ons decorators : BeDecorator FlatDecorator MacDecorator WinDecorator ;
+AddFilesToPackage add-ons decorators : HakiWinXDecor Win11Decorator ;
+
+
 # Deskbar menu symlinks
 
 local linkTarget ;
