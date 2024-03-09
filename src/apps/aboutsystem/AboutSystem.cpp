@@ -424,14 +424,23 @@ AboutWindow::QuitRequested()
 
 LogoView::LogoView()
 	:
-	BView("logo", B_WILL_DRAW),
-	fLogo(BTranslationUtils::GetBitmap(B_PNG_FORMAT, "logo.png"))
+	BView("logo", B_WILL_DRAW)
 {
+	SetDrawingMode(B_OP_OVER);
+
+#ifdef HAIKU_DISTRO_COMPATIBILITY_OFFICIAL
+	rgb_color bgColor = ui_color(B_DOCUMENT_BACKGROUND_COLOR);
+	if (bgColor.IsLight())
+		fLogo = BTranslationUtils::GetBitmap(B_PNG_FORMAT, "logo.png");
+	else
+		fLogo = BTranslationUtils::GetBitmap(B_PNG_FORMAT, "logo_dark.png");
+#else
+	fLogo = BTranslationUtils::GetBitmap(B_PNG_FORMAT, "walter_logo.png");
+#endif
+
 	// Set view color to panel background color when fLogo is NULL
 	// to prevent a white pixel from being drawn.
-	if (fLogo != NULL)
-		SetViewColor(255, 255, 255);
-	else
+	if (fLogo == NULL)
 		SetViewUIColor(B_PANEL_BACKGROUND_COLOR);
 }
 
@@ -468,7 +477,11 @@ LogoView::Draw(BRect updateRect)
 	if (fLogo == NULL)
 		return;
 
-	DrawBitmap(fLogo, BPoint((Bounds().Width() - fLogo->Bounds().Width()) / 2, 0));
+	BRect bounds(Bounds());
+	SetLowColor(ui_color(B_DOCUMENT_BACKGROUND_COLOR));
+	FillRect(bounds, B_SOLID_LOW);
+
+	DrawBitmap(fLogo, BPoint((bounds.Width() - fLogo->Bounds().Width()) / 2, 0));
 }
 
 
@@ -913,9 +926,7 @@ SysInfoView::_DesktopTextColor(int32 workspace) const
 		workspace = current_workspace();
 
 	rgb_color viewColor = screen.DesktopColor(workspace);
-	int viewBrightness = BPrivate::perceptual_brightness(viewColor);
-	textColor.blue = textColor.green = textColor.red = viewBrightness > 127
-		? 0 : 255;
+	textColor.blue = textColor.green = textColor.red = viewColor.IsLight() ? 0 : 255;
 	textColor.alpha = 255;
 
 	return textColor;
@@ -1178,12 +1189,15 @@ SysInfoView::_GetRamUsage(system_info* sysInfo)
 	BString ramUsage;
 	BString data;
 	double usedMemoryPercent = double(sysInfo->used_pages) / sysInfo->max_pages;
+	status_t status = fNumberFormat.FormatPercent(data, usedMemoryPercent);
 
-	if (fNumberFormat.FormatPercent(data, usedMemoryPercent) != B_OK)
-		data.SetToFormat("%d%%", (int)(100 * usedMemoryPercent));
-
-	ramUsage.SetToFormat(B_TRANSLATE_COMMENT("%d MiB used (%s)",
-		"326 MiB used (16%)"), used_pages(sysInfo), data.String());
+	if (status == B_OK) {
+		ramUsage.SetToFormat(B_TRANSLATE_COMMENT("%d MiB used (%s)",
+			"326 MiB used (16%)"), used_pages(sysInfo), data.String());
+	} else {
+		ramUsage.SetToFormat(B_TRANSLATE_COMMENT("%d MiB used (%d%%)",
+			"326 MiB used (16%)"), used_pages(sysInfo), (int)(100 * usedMemoryPercent));
+	}
 
 	return ramUsage;
 }
@@ -1590,8 +1604,11 @@ AboutView::_CreateCreditsView()
 		"\n\n"));
 
 	fCreditsView->SetFontAndColor(be_plain_font, B_FONT_ALL, &fLinkColor);
-	fCreditsView->InsertHyperText("https://www.haiku-os.org",
+	fCreditsView->InsertHyperText(B_TRANSLATE("Visit the Haiku website"),
 		new URLAction("https://www.haiku-os.org"));
+	fCreditsView->Insert("\n");
+	fCreditsView->InsertHyperText(B_TRANSLATE("Make a donation"),
+		new URLAction("https://www.haiku-inc.org/donate"));
 	fCreditsView->Insert("\n\n");
 
 	font.SetSize(be_bold_font->Size());
